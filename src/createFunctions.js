@@ -56,7 +56,7 @@ const setupSchedules = service =>
 
 const setupEvent = service => ({
   topic,
-  type,
+  type = "",
   function: toExecute,
   ensureIdempotent = false
 }) => [
