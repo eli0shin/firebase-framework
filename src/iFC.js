@@ -1,5 +1,4 @@
 const axios = require("axios");
-const getEnv = require("../../firebaseHelpers/get_env");
 
 /**
  * Inter-Function-Communicator
@@ -19,11 +18,12 @@ const getEnv = require("../../firebaseHelpers/get_env");
 async function ifc(service, options, req = {}) {
   const { X_GOOGLE_GCP_PROJECT, X_GOOGLE_FUNCTION_REGION } = process.env;
 
-  const isLocalhost = !X_GOOGLE_FUNCTION_REGION && getEnv() === "dev";
+  const isLocalhost =
+    !X_GOOGLE_FUNCTION_REGION || process.env.environment !== "production";
 
   const port = process.env.PORT || 5000;
 
-  const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
+  const { headers: { host = `localhost:${port}`, ...reqHeaders = {} } = {} } = req;
 
   const projectId = isLocalhost
     ? JSON.parse(process.env.FIREBASE_CONFIG).projectId
