@@ -13,13 +13,16 @@ const defaultCorsOptions = {
 
 const defaultValidatePrivilege = _privilege => (_req, _res, next) => next();
 
-module.exports = ({
-  validatePrivilege = defaultValidatePrivilege,
-  middleware = [],
-  corsEnabled = true,
-  corsOptions = defaultCorsOptions
-}) => config => {
-  const { routes, schema, postSchema = null } = config;
+module.exports = (
+  {
+    validatePrivilege = defaultValidatePrivilege,
+    middleware = [],
+    corsEnabled = true,
+    corsOptions = defaultCorsOptions
+  },
+  service
+) => {
+  const { routes, schema, postSchema = null } = service;
 
   const app = express();
 
@@ -52,7 +55,7 @@ module.exports = ({
           validatePrivilege(privilege),
           validateFields(postSchema || schema),
           setDefaults(schema),
-          applyModifiers(config),
+          applyModifiers(service),
           ...middleware,
           handleRequest(privilege, toExecute)
         );
@@ -61,7 +64,7 @@ module.exports = ({
           `${path}`,
           validatePrivilege(privilege),
           validateFields(schema),
-          applyModifiers(config),
+          applyModifiers(service),
           ...middleware,
           handleRequest(privilege, toExecute)
         );
@@ -69,7 +72,7 @@ module.exports = ({
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          applyModifiers(config),
+          applyModifiers(service),
           ...middleware,
           handleRequest(privilege, toExecute)
         );
@@ -114,13 +117,6 @@ const getHandlerForRole = (privilege, callback, req) => {
   }
   return sendError;
 };
-// typeof privilege === "object"
-//   ? req.headers.role
-//     ? privilege[req.headers.role]
-//     : typeof privilege.any === "function"
-//     ? privilege.any
-//     : sendError
-//   : callback;
 
 const sendError = (_req, res) =>
   res.status(500).send({ status: "error", error: "internal error" });
