@@ -23,7 +23,7 @@ async function ifc(service, options, req = {}) {
 
   const port = process.env.PORT || 5000;
 
-  const { headers: { host = `localhost:${port}`, ...reqHeaders = {} } = {} } = req;
+  const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
 
   const projectId = isLocalhost
     ? JSON.parse(process.env.FIREBASE_CONFIG).projectId
