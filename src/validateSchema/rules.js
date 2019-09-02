@@ -1,61 +1,43 @@
 module.exports = {
-  keyType: 'string',
-  valueType: 'object',
+  keyType: "string",
+  valueType: "object",
   childTypes: {
     default: {
-      type: ['boolean', 'string', 'object', 'number'],
-      required: false,
+      type: ["boolean", "string", "object", "number"],
+      required: false
     },
     required: {
-      type: ['boolean', 'function'],
-      required: false,
+      type: ["boolean", "function"],
+      required: false
     },
     enum: {
-      type: 'object',
+      type: "object",
       validator: value => Array.isArray(value),
-      required: false,
+      required: false
     },
     readOnly: {
-      type: 'boolean',
-      required: false,
+      type: "boolean",
+      required: false
     },
     immutable: {
-      type: 'boolean',
-      required: false,
+      type: "boolean",
+      required: false
     },
     type: {
       required: true,
-      type: ['boolean', 'string', 'object', 'number'],
+      type: ["boolean", "string", "object", "number"]
     },
     validator: {
       required: false,
-      type: 'function',
+      type: "function"
     },
     nullable: {
       required: false,
-      type: 'boolean',
+      type: "boolean"
     },
     writeModifier: {
       required: false,
-      type: 'function',
-    },
-    // readIf: {
-    //   required: false,
-    //   type: 'string',
-    //   validator: value =>
-    //     ['any', 'org-admin', 'sys-admin'].includes(value),
-    // },
-    // writeIf: {
-    //   required: false,
-    //   type: 'string',
-    //   validator: value =>
-    //     ['any', 'org-admin', 'sys-admin'].includes(value),
-    // },
-    // editIf: {
-    //   required: false,
-    //   type: 'string',
-    //   validator: value =>
-    //     ['any', 'org-admin', 'sys-admin'].includes(value),
-    // },
-  },
+      type: "function"
+    }
+  }
 };
