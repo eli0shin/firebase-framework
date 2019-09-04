@@ -152,20 +152,42 @@ A valid schema consists of an array of objects containing keys defined below
 
 ## Schema Validation
 
-A function that will validate schemas is available in `'firebase-framework/validateSchema'`
+A function that will validate schemas is available. It can be used as follows;
 
-## Exporting Services
+```js
+const { validateSchema } = require("firebase-framework");
+const services = require("./services");
 
-- All service directories should be imported into the `src/services.js` file and exported from it in the `services` array
+services.forEach(validateSchema);
+```
 
-## CRUD Operations
+## Route Handlers
 
-- within the `index.js` file, `path`s should point to individual functions to handle each operation
-- these can be named as follows: (for standard CRUD endpoints)
-  - `list.js` returns a list of resources (ex: list of causes)
-  - `show.js` returns a single resource (ex: for the cause page)
-  - `create.js` creates a new resource and returns the resulting object from firestore
-  - `update.js` updates and returns an existing resource
+HTTP functions must have the following signature:
+
+```js
+(req, req) => [statusCode, body, headers?] | Promise<[statusCode, body, headers?]> | void
+```
+
+The `req` and `res` arguments are regular express.js `request` and `response` objects.
+the key distinction being that while you _can_ call `res.status(200).send{hello: 'world}` to send a response, have found it preferable to return a tuple of [statusCode, responseBody, responseHeaders] from the route handler function.
+
+## Event Handlers
+
+Event Handlers have the following signature:
+
+```js
+(message, context) => Promise<void> | void
+```
+
+Message:
+
+| key           | description                                                                       |
+| ------------- | --------------------------------------------------------------------------------- |
+| data          | data transmitted with the message (already parsed JSON)                           |
+| dataBefore    | only on db change triggers, describes the data before the change                  |
+| changeContext | context of a db change event message (db changes are proxied over Google PubSub ) |
+| type          | type of db change the occurred, ['create', 'update', 'delete']                    |
 
 ## Deployment
 
@@ -178,7 +200,7 @@ To switch to the default project run `firebase use default`
   - `firebase deploy`
 
 - To test http triggers locally run `firebase serve`
-  - some functions require runtime env variables. For local development these are stored in `/src/.runtimeconfig.json`
+  - some functions require runtime env variables. For local development these can be stored in `/functions/.runtimeconfig.json`
   - This file is should not be committed to version control as it may contain secrets. To auto-generate it with the current project env:
     - `cd` into `src`
     - on macOS or linux run `firebase functions:config:get > .runtimeconfig.json`
@@ -198,10 +220,10 @@ Being that the DB used is Firestore and it is a NoSQL (non-relational) database,
 ## Event Idempotency
 
 Google PubSub ensures at-least-once delivery. What this means for us is that while all events are ensured to be delivered, if a function times out or takes too long to come up, the event will be delivered again.
-The issue with this is that events that are not inherently idempotent (specifically counter operations) can cause corrupted data.
+The issue with this is that events that are not inherently idempotent (specifically counter operations) can cause corrupted data when run more than once.
 
 To solve this, the `ensureIdempotency` value for an event should be set to `true` if duplicate execution of that event could be an issue.
-This is especially important if `Retry on failure` is set to true in the google console.
+This is especially important if `Retry on failure` is set to true in the google cloud console.
 
 Setting this flag to `true` requires that you accept a different first argument to your event handler function.
 instead of
