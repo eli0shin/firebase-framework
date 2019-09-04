@@ -59,21 +59,22 @@ const setupEvent = service => ({
   type = "",
   function: toExecute,
   ensureIdempotent = false
-}) => [
-  `${service.basePath}_${topic}_${type}`,
-  functions.pubsub
-    .topic(topic)
-    .onPublish(
-      parseMessage(
-        ensureIdempotent
-          ? withIdempotency(
-              `${service.basePath}_${topic}${type ? `_${type}` : ""}`,
-              toExecute
-            )
-          : toExecute
+}) => {
+  const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ""}`;
+
+  return [
+    functionName,
+    functions.pubsub
+      .topic(topic)
+      .onPublish(
+        parseMessage(
+          ensureIdempotent
+            ? withIdempotency(functionName, toExecute)
+            : toExecute
+        )
       )
-    )
-];
+  ];
+};
 
 const setupEvents = service =>
   Array.isArray(service.events)
