@@ -67,7 +67,7 @@ const setupEvent = service => ({
       parseMessage(
         ensureIdempotent
           ? withIdempotency(
-              `${service.basePath}_${topic}${type ? "_" + type : ""}`,
+              `${service.basePath}_${topic}${type ? `_${type}` : ""}`,
               toExecute
             )
           : toExecute
