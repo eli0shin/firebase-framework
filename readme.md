@@ -61,13 +61,6 @@ The config object can contain the following values:
 | corsEnabled       | false    | true                                                                                               | boolean    | whether the expressJs cors middleware should be enabled https://www.npmjs.com/package/cors                                                               |
 | corsOptions       | false    | {origin: true,methods: "GET,PUT,POST,DELETE,OPTIONS", allowedHeaders: "token, role, content-type"} | Object     | expressJs cors middleware options https://www.npmjs.com/package/cors#configuring-cors                                                                    |
 
-{
-validatePrivilege = defaultValidatePrivilege,
-middleware = [],
-corsEnabled = true,
-corsOptions = defaultCorsOptions
-},
-
 #### Creating your first service
 
 1. create a folder inside of `functions` called `hello`
