@@ -1,4 +1,4 @@
-const axios = require("axios");
+const axios = require('axios');
 
 /**
  * Inter-Function-Communicator
@@ -19,7 +19,7 @@ async function ifc(service, options, req = {}) {
   const { X_GOOGLE_GCP_PROJECT, X_GOOGLE_FUNCTION_REGION } = process.env;
 
   const isLocalhost =
-    !X_GOOGLE_FUNCTION_REGION || process.env.environment !== "production";
+    !X_GOOGLE_FUNCTION_REGION || process.env.environment !== 'production';
 
   const port = process.env.PORT || 5000;
 

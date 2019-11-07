@@ -1,4 +1,4 @@
-const firebase = require("firebase-admin");
+const firebase = require('firebase-admin');
 
 /**
  * This function ensures that a processed event is only processed once.
@@ -34,9 +34,7 @@ const firebase = require("firebase-admin");
  * ```
  */
 
-module.exports = idempotencyRef => (functionName, handler) => async (
-  ...args
-) => {
+module.exports = (functionName, handler) => async (...args) => {
   const [message, context] = args;
 
   // if the event is a pubsub message published in response to a db change (it is a relayed message)
