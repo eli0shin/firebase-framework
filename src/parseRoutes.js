@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const validateFields = require('./validateFields');
-const setDefaults = require('./validateFields/setDefaults');
-const applyModifiers = require('./validateFields/applyModifiers');
+const setDefaults = require('./validateFields/setDefaults').middleware;
+const applyModifiers = require('./validateFields/applyModifiers').middleware;
 
 const defaultCorsOptions = {
   origin: true,
@@ -45,7 +45,8 @@ module.exports = (
       method,
       function: toExecute,
       privilege = 'any',
-      ignoreBody = false
+      ignoreBody = false,
+      schema: routeSchema = null
     }) => {
       if (ignoreBody) {
         app[method](
@@ -55,22 +56,22 @@ module.exports = (
           ...serviceMiddleware,
           handleRequest(privilege, toExecute)
         );
-      } else if (method === 'post' && (postSchema || schema)) {
+      } else if (method === 'post' && (routeSchema || postSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          validateFields(postSchema || schema),
+          validateFields(routeSchema || postSchema || schema),
           setDefaults(schema),
           applyModifiers(service),
           ...middleware,
           ...serviceMiddleware,
           handleRequest(privilege, toExecute)
         );
-      } else if (method === 'put' && schema) {
+      } else if (method === 'put' && (routeSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          validateFields(schema),
+          validateFields(routeSchema || schema),
           applyModifiers(service),
           ...middleware,
           ...serviceMiddleware,

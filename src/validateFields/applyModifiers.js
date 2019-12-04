@@ -1,30 +1,29 @@
-const applyModifiers = ({
-  schema,
-  postSchema = null,
-  withModifiers = false,
-}) => (req, res, next) => {
+const middleware = ({ schema, postSchema = null, withModifiers = false }) => (
+  req,
+  res,
+  next
+) => {
   if (withModifiers) {
     const method = req.method.toLowerCase();
 
-    const currentSchema =
-      method === 'post' && postSchema ? postSchema : schema;
+    const currentSchema = method === 'post' && postSchema ? postSchema : schema;
 
     if (method !== 'get') {
-      Object.entries(req.body).forEach(([key, _value]) => {
-        if (
-          currentSchema[key] &&
-          'writeModifier' in currentSchema[key]
-        ) {
-          req.body[key] = currentSchema[key].writeModifier(
-            req.body[key],
-            req.body,
-          );
-        }
-      });
+      applyModifiers(currentSchema, req.body);
     }
   }
 
   return next();
 };
 
-module.exports = applyModifiers;
+module.exports.middlware = middleware;
+
+function applyModifiers(schema, data) {
+  Object.entries(data).forEach(([key, _value]) => {
+    if (schema[key] && 'writeModifier' in schema[key]) {
+      data[key] = schema[key].writeModifier(data[key], data);
+    }
+  });
+}
+
+module.exports.applyModifiers = applyModifiers;
