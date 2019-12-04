@@ -16,7 +16,7 @@ const middleware = ({ schema, postSchema = null, withModifiers = false }) => (
   return next();
 };
 
-module.exports.middlware = middleware;
+module.exports.middleware = middleware;
 
 function applyModifiers(schema, data) {
   Object.entries(data).forEach(([key, _value]) => {
