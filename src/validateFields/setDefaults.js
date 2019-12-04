@@ -1,16 +1,18 @@
-async function setDefaults(schema, data) {
-  Object.entries(schema).forEach(([key, { default: defaultValue }]) => {
-    if (
-      typeof data[key] === 'undefined' &&
-      typeof defaultValue !== 'undefined'
-    ) {
-      if (typeof defaultValue === 'function'){
-        data[key] = await defaultValue(data);
-      } else {
-        data[key] = defaultValue;
+function setDefaults(schema, data) {
+  return Promise.all(
+    Object.entries(schema).map(async ([key, { default: defaultValue }]) => {
+      if (
+        typeof data[key] === 'undefined' &&
+        typeof defaultValue !== 'undefined'
+      ) {
+        if (typeof defaultValue === 'function') {
+          data[key] = await defaultValue(data);
+        } else {
+          data[key] = defaultValue;
+        }
       }
-    }
-  });
+    })
+  );
 }
 
 module.exports.setDefaults = setDefaults;
