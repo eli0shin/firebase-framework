@@ -2,8 +2,14 @@ const iFC = require('./iFC');
 
 function keepFunctionAlive(service) {
   const { basePath } = service;
-  return function pingKeepAliveFunction() {
-    return iFC(basePath, { url: 'heartbeat' });
+  return async function pingKeepAliveFunction() {
+    try {
+      const result = await iFC(basePath, { url: 'heartbeat' });
+      console.log(`TCL: pingKeepAliveFunction -> result`, result);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   };
 }
 
