@@ -3,6 +3,7 @@ const parseRoutes = require('./parseRoutes');
 const publishChanges = require('./publishChanges');
 const parseMessage = require('./pubSub/parseMessage');
 const withIdempotency = require('./ensureIdempotent');
+const keepFunctionAlive = require('./keepFunctionAlive');
 
 const fromEntries = [(acc, [key, value]) => ({ ...acc, [key]: value }), {}];
 
@@ -38,6 +39,15 @@ const setupDBTriggers = service =>
         [`${service.basePath}_onCreate`]: setupOnCreate(service),
         [`${service.basePath}_onUpdate`]: setupOnUpdate(service),
         [`${service.basePath}_onDelete`]: setupOnDelete(service)
+      }
+    : {};
+
+const setupKeepAlive = service =>
+  service.keepAlive
+    ? {
+        [`${service.basePath}_keep_alive`]: functions.pubsub
+          .schedule('every 5 minutes')
+          .onRun(keepFunctionAlive(service))
       }
     : {};
 
@@ -90,7 +100,8 @@ const parseConfig = (config, service) => ({
   ...setupRoutes(config, service),
   ...setupSchedules(service),
   ...setupDBTriggers(service),
-  ...setupEvents(service)
+  ...setupEvents(service),
+  ...setupKeepAlive(service)
 });
 
 const createFunctions = (config, services) =>

@@ -117,23 +117,28 @@ module.exports = [hello];
 | routes         | false    | Array   | these are the functions triggered within the service by http requests (see routes below)                                                   |
 | events         | false    | Array   | pub sub events that the service will listed to (see events below)                                                                          |
 | schedule       | false    | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                       |
+| keepAlive      | false    | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*        |
+
+- Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account. (As of the time of writing)
 
 #### Routes
 
-| key       | required | type     | description                                                                                       |
-| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------- |
-| path      | true     | string   | expressJs style paths that can contain parameters                                                 |
-| method    | true     | string   | ['get', 'post', 'put', 'delete']                                                                  |
-| function  | false    | function | to be executed when a request reaches the defined `path`(optional if privilege defines functions) |
-| privilege | false    | string   | one of the privileges defined in validatePrivilege middleware                                     |
+| key        | required | type     | description                                                                                                |
+| ---------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| path       | true     | string   | expressJs style paths that can contain parameters                                                          |
+| method     | true     | string   | ['get', 'post', 'put', 'delete']                                                                           |
+| function   | false    | function | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
+| privilege  | false    | string   | one of the privileges defined in validatePrivilege middleware                                              |
+| ignoreBody | false    | boolean  | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
 
 #### Events
 
-| key      | required | type     | description                                                                                                                                                                                                                       |
-| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| topic    | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
-| type     | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
-| function | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
+| key              | required | type     | description                                                                                                                                                                                                                       |
+| ---------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| topic            | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
+| type             | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
+| function         | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
+| ensureIdempotent | false    | boolean  | whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once                                                             |
 
 #### Schedule
 
@@ -150,17 +155,17 @@ module.exports = [hello];
 
 A valid schema consists of an array of objects containing keys defined below
 
-| key           | type                            | required | valid values                                         |
-| ------------- | ------------------------------- | -------- | ---------------------------------------------------- |
-| type          | string                          | true     | 'boolean', 'string', 'object', 'number'              |
-| default       | boolean, string, object, number | false    | any                                                  |
-| required      | boolean, function               | false    | true, false, (value: any, record: Object) => boolean |
-| enum          | Array                           | false    | any[]                                                |
-| readOnly      | boolean                         | false    | true, false                                          |
-| immutable     | boolean                         | false    | true, false                                          |
-| nullable      | boolean                         | false    | true, false                                          |
-| validator     | function                        | false    | (value: any, record: Object) => boolean              |
-| writeModifier | function                        | false    | (value: any, record: Object) => any                  |
+| key           | type                                      | required | valid values                                         |
+| ------------- | ----------------------------------------- | -------- | ---------------------------------------------------- |
+| type          | string                                    | true     | 'boolean', 'string', 'object', 'number'              |
+| default       | boolean, string, object, number, function | false    | any, (record: Object) => any / Promise<any>          |
+| required      | boolean, function                         | false    | true, false, (value: any, record: Object) => boolean |
+| enum          | Array                                     | false    | any[]                                                |
+| readOnly      | boolean                                   | false    | true, false                                          |
+| immutable     | boolean                                   | false    | true, false                                          |
+| nullable      | boolean                                   | false    | true, false                                          |
+| validator     | function                                  | false    | (value: any, record: Object) => boolean              |
+| writeModifier | function                                  | false    | (value: any, record: Object) => any                  |
 
 ## Schema Validation
 
@@ -194,12 +199,12 @@ Event Handlers have the following signature:
 
 Message:
 
-| key           | description                                                                       |
-| ------------- | --------------------------------------------------------------------------------- |
-| data          | data transmitted with the message (already parsed JSON)                           |
-| dataBefore    | only on db change triggers, describes the data before the change                  |
-| changeContext | context of a db change event message (db changes are proxied over Google PubSub ) |
-| type          | type of db change the occurred, ['create', 'update', 'delete']                    |
+| key           | description                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| data          | data transmitted with the message (already parsed JSON)                                         |
+| dataBefore    | only on db change triggers set off by an update operation, describes the data before the change |
+| changeContext | context of a db change event message (db changes are proxied over Google PubSub )               |
+| type          | type of db change the occurred, ['create', 'update', 'delete']                                  |
 
 ## Deployment
 
@@ -257,7 +262,7 @@ async function (setComplete, message, context){
 
 In the case of a counter where a transaction or batch is used to update a value,
 the idempotent success confirmation callback should be run inside of the transaction.
-This is done by calling `setComplete` within your transaction and passing it a reference to your transaction.
+This is done by calling `setComplete` within your transaction and passing it a reference to your transaction or passing it the batch reference.
 
 ```js
 async function (setComplete, message, context){

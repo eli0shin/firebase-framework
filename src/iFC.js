@@ -1,5 +1,10 @@
 const axios = require('axios');
 
+const defaultOptions = {
+  url: '',
+  headers: {}
+};
+
 /**
  * Inter-Function-Communicator
  * given a service name, it can trigger http events and return responses
@@ -14,8 +19,7 @@ const axios = require('axios');
  * @param {req} Object - the req object passed the the function calling i_f_c
  *   used to pass through required prams including auth information to the remote service
  */
-
-async function ifc(service, options, req = {}) {
+async function ifc(service, options = defaultOptions, req = {}) {
   const { X_GOOGLE_GCP_PROJECT, X_GOOGLE_FUNCTION_REGION } = process.env;
 
   const isLocalhost =

@@ -26,7 +26,8 @@ module.exports = (
     routes,
     schema,
     postSchema = null,
-    middleware: serviceMiddleware = []
+    middleware: serviceMiddleware = [],
+    keepAlive = false
   } = service;
 
   const app = express();
@@ -90,6 +91,12 @@ module.exports = (
     }
   );
 
+  if (keepAlive) {
+    app.get('/heartbeat', (_, res) =>
+      res.status(200).send({ status: 'success' })
+    );
+  }
+
   return app;
 };
 
@@ -105,7 +112,7 @@ const withResponse = handler => async (req, res) => {
       .set(headers)
       .send(message);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(error.statusCode || 500)
       .send({ status: 'error', error: error.message });
@@ -119,8 +126,8 @@ const getHandlerForRole = (privilege, callback, req) => {
   if (typeof privilege !== 'object') {
     return callback;
   }
-  if (req.headers.role && typeof req.headers.role === 'function') {
-    return req.headers.role;
+  if (req.headers.role && typeof privilege[req.headers.role] === 'function') {
+    return privilege[req.headers.role];
   }
   if (typeof privilege.any === 'function') {
     return privilege.any;
