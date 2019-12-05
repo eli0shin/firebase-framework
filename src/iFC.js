@@ -37,12 +37,11 @@ async function ifc(service, options = defaultOptions, req = {}) {
     ? JSON.parse(process.env.FIREBASE_CONFIG).cloudResourceLocation
     : null;
 
-  const reqUrl = isLocalhost;
+  const reqUrl = isLocalhost
     ? `http://${host}/${projectId}/${cloudResourceLocation}1`
     : `https://${X_GOOGLE_FUNCTION_REGION}-${X_GOOGLE_GCP_PROJECT}.cloudfunctions.net`;
 
-    
-  console.log(`TCL: ifc -> reqUrl`, reqUrl)
+  console.log(`TCL: ifc -> reqUrl`, reqUrl);
 
   const { url, headers = {}, ...otherOptions } = options;
 
