@@ -119,7 +119,7 @@ module.exports = [hello];
 | schedule       | false    | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                       |
 | keepAlive      | false    | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*        |
 
-- Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account. (As of the time of writing)
+\* Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account (as of the time of writing). \* The keepAlive feature adds a route to the service at '/heartbeat'. This will not conflict with wildcard routes in the service but would conflict with a route named the same.
 
 #### Routes
 

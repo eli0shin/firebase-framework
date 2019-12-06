@@ -40,6 +40,12 @@ module.exports = (
   }
   app.use(express.json());
 
+  if (keepAlive) {
+    app.get('/heartbeat', (_, res) =>
+      res.status(200).send({ status: 'success' })
+    );
+  }
+
   routes.forEach(
     ({
       path,
@@ -90,12 +96,6 @@ module.exports = (
       }
     }
   );
-
-  if (keepAlive) {
-    app.get('/heartbeat', (_, res) =>
-      res.status(200).send({ status: 'success' })
-    );
-  }
 
   return app;
 };

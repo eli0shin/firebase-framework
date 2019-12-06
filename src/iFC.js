@@ -21,13 +21,9 @@ const defaultOptions = {
  */
 async function ifc(service, options = defaultOptions, req = {}) {
   const { X_GOOGLE_GCP_PROJECT, X_GOOGLE_FUNCTION_REGION } = process.env;
-  console.log(`TCL: ifc -> process.env`, process.env);
-  console.log(`TCL: ifc -> X_GOOGLE_FUNCTION_REGION`, X_GOOGLE_FUNCTION_REGION);
-  console.log(`TCL: ifc -> X_GOOGLE_GCP_PROJECT`, X_GOOGLE_GCP_PROJECT);
 
   const isLocalhost = !X_GOOGLE_FUNCTION_REGION;
 
-  console.log(`TCL: ifc -> isLocalhost`, isLocalhost);
   const port = process.env.PORT || 5000;
 
   const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
@@ -43,7 +39,6 @@ async function ifc(service, options = defaultOptions, req = {}) {
     ? `http://${host}/${projectId}/${cloudResourceLocation}1`
     : `https://${X_GOOGLE_FUNCTION_REGION}-${X_GOOGLE_GCP_PROJECT}.cloudfunctions.net`;
 
-  console.log(`TCL: ifc -> reqUrl`, reqUrl);
   const { url, headers = {}, ...otherOptions } = options;
 
   return axios({
