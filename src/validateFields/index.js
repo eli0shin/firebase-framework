@@ -45,7 +45,7 @@ module.exports = schema => async (req, res, next) => {
     if (req.method === 'POST') {
       Object.entries(schema).forEach(([key, { required }]) => {
         const isRequired =
-          typeof required === 'function' ? required(req.body) : required;
+          typeof required === 'function' ? required(req.body, req) : required;
         if (typeof req.body[key] === 'undefined' && isRequired) {
           throw new TypeError(`${key} is required and missing`);
         }
