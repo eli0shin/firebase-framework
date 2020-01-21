@@ -123,13 +123,14 @@ module.exports = [hello];
 
 #### Routes
 
-| key        | required | type     | description                                                                                                |
-| ---------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| path       | true     | string   | expressJs style paths that can contain parameters                                                          |
-| method     | true     | string   | ['get', 'post', 'put', 'delete']                                                                           |
-| function   | false    | function | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
-| privilege  | false    | string   | one of the privileges defined in validatePrivilege middleware                                              |
-| ignoreBody | false    | boolean  | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
+| key        | required | type              | description                                                                                                |
+| ---------- | -------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| path       | true     | string            | expressJs style paths that can contain parameters                                                          |
+| method     | true     | string            | ['get', 'post', 'put', 'delete']                                                                           |
+| function   | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
+| privilege  | false    | string            | one of the privileges defined in validatePrivilege middleware                                              |
+| ignoreBody | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
+| middleware | false    | Array<Middleware> | an array of middleware that will apply to this route                                                       |
 
 #### Events
 
@@ -155,17 +156,17 @@ module.exports = [hello];
 
 A valid schema consists of an array of objects containing keys defined below
 
-| key           | type                                      | required | valid values                                         |
-| ------------- | ----------------------------------------- | -------- | ---------------------------------------------------- |
-| type          | string                                    | true     | 'boolean', 'string', 'object', 'number'              |
-| default       | boolean, string, object, number, function | false    | any, (record: Object) => any / Promise<any>          |
-| required      | boolean, function                         | false    | true, false, (value: any, record: Object) => boolean |
-| enum          | Array                                     | false    | any[]                                                |
-| readOnly      | boolean                                   | false    | true, false                                          |
-| immutable     | boolean                                   | false    | true, false                                          |
-| nullable      | boolean                                   | false    | true, false                                          |
-| validator     | function                                  | false    | (value: any, record: Object) => boolean              |
-| writeModifier | function                                  | false    | (value: any, record: Object) => any                  |
+| key           | type                                      | required | valid values                                                       |
+| ------------- | ----------------------------------------- | -------- | ------------------------------------------------------------------ |
+| type          | string                                    | true     | 'boolean', 'string', 'object', 'number'                            |
+| default       | boolean, string, object, number, function | false    | any, (record: Object, req: Request) => any / Promise<any>          |
+| required      | boolean, function                         | false    | true, false, (value: any, record: Object, req: Request) => boolean |
+| enum          | Array                                     | false    | any[]                                                              |
+| readOnly      | boolean                                   | false    | true, false                                                        |
+| immutable     | boolean                                   | false    | true, false                                                        |
+| nullable      | boolean                                   | false    | true, false                                                        |
+| validator     | function                                  | false    | (value: any, record: Object, req: Request) => boolean              |
+| writeModifier | function                                  | false    | (value: any, record: Object, req: Request) => any                  |
 
 ## Schema Validation
 
