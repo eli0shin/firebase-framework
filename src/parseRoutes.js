@@ -53,7 +53,8 @@ module.exports = (
       function: toExecute,
       privilege = 'any',
       ignoreBody = false,
-      schema: routeSchema = null
+      schema: routeSchema = null,
+      middleware: routeMiddleware = []
     }) => {
       if (ignoreBody) {
         app[method](
@@ -61,36 +62,40 @@ module.exports = (
           validatePrivilege(privilege),
           ...middleware,
           ...serviceMiddleware,
+          ...routeMiddleware,
           handleRequest(privilege, toExecute)
         );
       } else if (method === 'post' && (routeSchema || postSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
+          ...middleware,
+          ...serviceMiddleware,
+          ...routeMiddleware,
           validateFields(routeSchema || postSchema || schema),
           setDefaults(schema),
           applyModifiers(service),
-          ...middleware,
-          ...serviceMiddleware,
           handleRequest(privilege, toExecute)
         );
       } else if (method === 'put' && (routeSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          validateFields(routeSchema || schema),
-          applyModifiers(service),
           ...middleware,
           ...serviceMiddleware,
+          ...routeMiddleware,
+          validateFields(routeSchema || schema),
+          applyModifiers(service),
           handleRequest(privilege, toExecute)
         );
       } else {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          applyModifiers(service),
           ...middleware,
           ...serviceMiddleware,
+          ...routeMiddleware,
+          applyModifiers(service),
           handleRequest(privilege, toExecute)
         );
       }
