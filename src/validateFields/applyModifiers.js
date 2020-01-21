@@ -9,7 +9,7 @@ const middleware = ({ schema, postSchema = null, withModifiers = false }) => (
     const currentSchema = method === 'post' && postSchema ? postSchema : schema;
 
     if (method !== 'get') {
-      applyModifiers(currentSchema, req.body);
+      applyModifiers(currentSchema, req.body, req);
     }
   }
 
