@@ -12,9 +12,9 @@ const flattenObjects = [(acc, el) => ({ ...acc, ...el }), {}];
 const setupRoutes = (config, service) =>
   Array.isArray(service.routes)
     ? {
-        [service.basePath]: functions.https.onRequest(
-          parseRoutes(config, service)
-        )
+        [service.basePath]: functions
+          .runWith(config.runtimeOptions || service.runtimeOptions || {})
+          .https.onRequest(parseRoutes(config, service)),
       }
     : {};
 
@@ -38,7 +38,7 @@ const setupDBTriggers = service =>
     ? {
         [`${service.basePath}_onCreate`]: setupOnCreate(service),
         [`${service.basePath}_onUpdate`]: setupOnUpdate(service),
-        [`${service.basePath}_onDelete`]: setupOnDelete(service)
+        [`${service.basePath}_onDelete`]: setupOnDelete(service),
       }
     : {};
 
@@ -47,7 +47,7 @@ const setupKeepAlive = service =>
     ? {
         [`${service.basePath}_keep_alive`]: functions.pubsub
           .schedule('every 5 minutes')
-          .onRun(keepFunctionAlive(service))
+          .onRun(keepFunctionAlive(service)),
       }
     : {};
 
@@ -55,13 +55,15 @@ const setupSchedule = service => ({
   time,
   name,
   function: toExecute,
-  timeZone = 'America/New_York'
+  timeZone = 'America/New_York',
+  runtimeOptions,
 }) => [
   [`${service.basePath}_${name}`],
-  functions.pubsub
-    .schedule(time)
+  functions
+    .runWith(runtimeOptions || service.runtimeOptions || {})
+    .pubsub.schedule(time)
     .timeZone(timeZone)
-    .onRun(toExecute)
+    .onRun(toExecute),
 ];
 
 const setupSchedules = service =>
@@ -73,21 +75,23 @@ const setupEvent = service => ({
   topic,
   type = '',
   function: toExecute,
-  ensureIdempotent = false
+  ensureIdempotent = false,
+  runtimeOptions,
 }) => {
   const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ''}`;
 
   return [
     functionName,
-    functions.pubsub
-      .topic(topic)
+    functions
+      .runWith(runtimeOptions || service.runtimeOptions || {})
+      .pubsub.topic(topic)
       .onPublish(
         parseMessage(
           ensureIdempotent
             ? withIdempotency(functionName, toExecute)
             : toExecute
         )
-      )
+      ),
   ];
 };
 
@@ -101,7 +105,7 @@ const parseConfig = (config, service) => ({
   ...setupSchedules(service),
   ...setupDBTriggers(service),
   ...setupEvents(service),
-  ...setupKeepAlive(service)
+  ...setupKeepAlive(service),
 });
 
 const createFunctions = (config, services) =>

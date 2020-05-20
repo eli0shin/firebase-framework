@@ -42,7 +42,7 @@ const services = require('./services');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: '<your firebase database url>'
+  databaseURL: '<your firebase database url>',
 });
 
 const config = {};
@@ -71,12 +71,12 @@ The config object can contain the following values:
 const schema = {
   name: {
     type: 'string',
-    required: true
+    required: true,
   },
   age: {
     type: 'number',
-    required: true
-  }
+    required: true,
+  },
 };
 
 module.exports = {
@@ -85,9 +85,9 @@ module.exports = {
   routes: [
     {
       path: '/',
-      function: req => [200, { message: 'hello-world' }]
-    }
-  ]
+      function: req => [200, { message: 'hello-world' }],
+    },
+  ],
 };
 ```
 
@@ -105,49 +105,57 @@ module.exports = [hello];
 - Service configuration is exported from the `index.js` file in the service's directory
 - the config object's structure is as follows:
 
-| key            | required | type    | description                                                                                                                                |
-| -------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| basePath       | true     | string  | defines the services base-path                                                                                                             |
-| resourcePath   | false    | string  | defines which documents in the db should be published when changed ex: `'posts/{id}'` (uses the cloud functions firestore triggers syntax) |
-| schema         | false    | object  | should contain a reference to the `require`d schema file                                                                                   |
-| postSchema     | false    | object  | optional alternative used for services that require special fields during creation                                                         |
-| publishChanges | false    | boolean | whether the service should publish changes to it's data as messages on cloud pub sub                                                       |
-| withModifiers  | false    | boolean | declares that the schema can contain `writeModifier` keys that define a function that will modify values before they are processes/saved   |
-| middleware     | false    | Array   | ExpressJs middleware that will apply to all routes in the service                                                                          |
-| routes         | false    | Array   | these are the functions triggered within the service by http requests (see routes below)                                                   |
-| events         | false    | Array   | pub sub events that the service will listed to (see events below)                                                                          |
-| schedule       | false    | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                       |
-| keepAlive      | false    | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*        |
+| key                                                                                  | required | type    | description                                                                                                                                                           |
+| ------------------------------------------------------------------------------------ | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basePath                                                                             | true     | string  | defines the services base-path                                                                                                                                        |
+| resourcePath                                                                         | false    | string  | defines which documents in the db should be published when changed ex: `'posts/{id}'` (uses the cloud functions firestore triggers syntax)                            |
+| schema                                                                               | false    | object  | should contain a reference to the `require`d schema file                                                                                                              |
+| postSchema                                                                           | false    | object  | optional alternative used for services that require special fields during creation                                                                                    |
+| publishChanges                                                                       | false    | boolean | whether the service should publish changes to it's data as messages on cloud pub sub                                                                                  |
+| withModifiers                                                                        | false    | boolean | declares that the schema can contain `writeModifier` keys that define a function that will modify values before they are processes/saved                              |
+| middleware                                                                           | false    | Array   | ExpressJs middleware that will apply to all routes in the service                                                                                                     |
+| routes                                                                               | false    | Array   | these are the functions triggered within the service by http requests (see routes below)                                                                              |
+| events                                                                               | false    | Array   | pub sub events that the service will listed to (see events below)                                                                                                     |
+| schedule                                                                             | false    | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                                                  |
+| keepAlive                                                                            | false    | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*                                   |
+| runtimeOptions                                                                       | false    | object  | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. |
+| `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |
 
 \* Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account (as of the time of writing). \* The keepAlive feature adds a route to the service at '/heartbeat'. This will not conflict with wildcard routes in the service but would conflict with a route named the same.
 
 #### Routes
 
-| key        | required | type              | description                                                                                                |
-| ---------- | -------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
-| path       | true     | string            | expressJs style paths that can contain parameters                                                          |
-| method     | true     | string            | ['get', 'post', 'put', 'delete']                                                                           |
-| function   | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
-| privilege  | false    | string            | one of the privileges defined in validatePrivilege middleware                                              |
-| ignoreBody | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
-| middleware | false    | Array<Middleware> | an array of middleware that will apply to this route                                                       |
+| key                                                                                  | required | type              | description                                                                                                                                                           |
+| ------------------------------------------------------------------------------------ | -------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| path                                                                                 | true     | string            | expressJs style paths that can contain parameters                                                                                                                     |
+| method                                                                               | true     | string            | ['get', 'post', 'put', 'delete']                                                                                                                                      |
+| function                                                                             | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)                                                                     |
+| privilege                                                                            | false    | string            | one of the privileges defined in validatePrivilege middleware                                                                                                         |
+| ignoreBody                                                                           | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema                                                            |
+| middleware                                                                           | false    | Array<Middleware> | an array of middleware that will apply to this route                                                                                                                  |
+| runtimeOptions                                                                       | false    | object            | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. |
+| `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |          |
 
 #### Events
 
-| key              | required | type     | description                                                                                                                                                                                                                       |
-| ---------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| topic            | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
-| type             | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
-| function         | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
-| ensureIdempotent | false    | boolean  | whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once                                                             |
+| key                                                                                  | required | type     | description                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------ | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| topic                                                                                | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
+| type                                                                                 | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
+| function                                                                             | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
+| ensureIdempotent                                                                     | false    | boolean  | whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once                                                             |
+| runtimeOptions                                                                       | false    | object   | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'.                                                             |
+| `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |
 
 #### Schedule
 
-| key      | required | type     | description                                                                     |
-| -------- | -------- | -------- | ------------------------------------------------------------------------------- |
-| name     | true     | string   | The name of the schedule (it can be anything)                                   |
-| time     | true     | string   | Both Unix Crontab and AppEngine syntax are supported by Google Cloud Scheduler. |
-| function | false    | function | to be executed when the cronjob is run                                          |
+| key                                                                                  | required | type     | description                                                                                                                                                           |
+| ------------------------------------------------------------------------------------ | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                                                                                 | true     | string   | The name of the schedule (it can be anything)                                                                                                                         |
+| time                                                                                 | true     | string   | Both Unix Crontab and AppEngine syntax are supported by Google Cloud Scheduler.                                                                                       |
+| function                                                                             | false    | function | to be executed when the cronjob is run                                                                                                                                |
+| runtimeOptions                                                                       | false    | object   | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. |
+| `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |
 
 ## Service Schemas
 
