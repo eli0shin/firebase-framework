@@ -35,20 +35,31 @@ npm install --save firebase-framework
 Your `functions/index.js` file should contain:
 
 ```js
-const admin = require("firebase-admin");
-const { createFunctions } = require("firebase-framework");
-const serviceAccount = require("../serviceAccountKey.json");
-const services = require("./services");
+const admin = require('firebase-admin');
+const { createFunctions } = require('firebase-framework');
+const serviceAccount = require('../serviceAccountKey.json');
+const services = require('./services');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "<your firebase database url>"
+  databaseURL: '<your firebase database url>'
 });
 
 const config = {};
 
 module.exports = createFunctions(config, services);
 ```
+
+##### Config
+
+The config object can contain the following values:
+
+| key               | required | default                                                                                            | type       | description                                                                                                                                              |
+| ----------------- | -------- | -------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| validatePrivilege | false    | (privilege) => (req, res, next) => next()                                                          | Function   | A function that accepts a privilege and returns an expressJs middleware function to validate wheter the client has the correct privilege for the request |
+| middleware        | false    | []                                                                                                 | Function[] | An array of expressJs middlewares to be added to all routes across all services                                                                          |
+| corsEnabled       | false    | true                                                                                               | boolean    | whether the expressJs cors middleware should be enabled https://www.npmjs.com/package/cors                                                               |
+| corsOptions       | false    | {origin: true,methods: "GET,PUT,POST,DELETE,OPTIONS", allowedHeaders: "token, role, content-type"} | Object     | expressJs cors middleware options https://www.npmjs.com/package/cors#configuring-cors                                                                    |
 
 #### Creating your first service
 
@@ -59,22 +70,22 @@ module.exports = createFunctions(config, services);
 ```js
 const schema = {
   name: {
-    type: "string",
+    type: 'string',
     required: true
   },
   age: {
-    type: "number",
+    type: 'number',
     required: true
   }
 };
 
 module.exports = {
-  basePath: "hello",
+  basePath: 'hello',
   schema,
   routes: [
     {
-      path: "/",
-      function: req => [200, { message: "hello-world" }]
+      path: '/',
+      function: req => [200, { message: 'hello-world' }]
     }
   ]
 };
@@ -84,7 +95,7 @@ module.exports = {
 5. add the following into into `services.js`
 
 ```js
-const hello = require("./hello");
+const hello = require('./hello');
 
 module.exports = [hello];
 ```
@@ -102,26 +113,33 @@ module.exports = [hello];
 | postSchema     | false    | object  | optional alternative used for services that require special fields during creation                                                         |
 | publishChanges | false    | boolean | whether the service should publish changes to it's data as messages on cloud pub sub                                                       |
 | withModifiers  | false    | boolean | declares that the schema can contain `writeModifier` keys that define a function that will modify values before they are processes/saved   |
+| middleware     | false    | Array   | ExpressJs middleware that will apply to all routes in the service                                                                          |
 | routes         | false    | Array   | these are the functions triggered within the service by http requests (see routes below)                                                   |
 | events         | false    | Array   | pub sub events that the service will listed to (see events below)                                                                          |
 | schedule       | false    | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                       |
+| keepAlive      | false    | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*        |
+
+\* Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account (as of the time of writing). \* The keepAlive feature adds a route to the service at '/heartbeat'. This will not conflict with wildcard routes in the service but would conflict with a route named the same.
 
 #### Routes
 
-| key       | required | type     | description                                                                                       |
-| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------- |
-| path      | true     | string   | expressJs style paths that can contain parameters                                                 |
-| method    | true     | string   | ['get', 'post', 'put', 'delete']                                                                  |
-| function  | false    | function | to be executed when a request reaches the defined `path`(optional if privilege defines functions) |
-| privilege | false    | string   | one of the privileges defined in validatePrivilege middleware                                     |
+| key        | required | type              | description                                                                                                |
+| ---------- | -------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| path       | true     | string            | expressJs style paths that can contain parameters                                                          |
+| method     | true     | string            | ['get', 'post', 'put', 'delete']                                                                           |
+| function   | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
+| privilege  | false    | string            | one of the privileges defined in validatePrivilege middleware                                              |
+| ignoreBody | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
+| middleware | false    | Array<Middleware> | an array of middleware that will apply to this route                                                       |
 
 #### Events
 
-| key      | required | type     | description                                                                                                                                                                                                                       |
-| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| topic    | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
-| type     | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
-| function | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
+| key              | required | type     | description                                                                                                                                                                                                                       |
+| ---------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| topic            | true     | string   | the pub sub topic to subscribe to                                                                                                                                                                                                 |
+| type             | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about |
+| function         | false    | function | to be executed when the described event is triggered                                                                                                                                                                              |
+| ensureIdempotent | false    | boolean  | whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once                                                             |
 
 #### Schedule
 
@@ -138,25 +156,25 @@ module.exports = [hello];
 
 A valid schema consists of an array of objects containing keys defined below
 
-| key           | type                            | required | valid values                                         |
-| ------------- | ------------------------------- | -------- | ---------------------------------------------------- |
-| type          | string                          | true     | 'boolean', 'string', 'object', 'number'              |
-| default       | boolean, string, object, number | false    | any                                                  |
-| required      | boolean, function               | false    | true, false, (value: any, record: Object) => boolean |
-| enum          | Array                           | false    | any[]                                                |
-| readOnly      | boolean                         | false    | true, false                                          |
-| immutable     | boolean                         | false    | true, false                                          |
-| nullable      | boolean                         | false    | true, false                                          |
-| validator     | function                        | false    | (value: any, record: Object) => boolean              |
-| writeModifier | function                        | false    | (value: any, record: Object) => any                  |
+| key           | type                                      | required | valid values                                                       |
+| ------------- | ----------------------------------------- | -------- | ------------------------------------------------------------------ |
+| type          | string                                    | true     | 'boolean', 'string', 'object', 'number'                            |
+| default       | boolean, string, object, number, function | false    | any, (record: Object, req: Request) => any / Promise<any>          |
+| required      | boolean, function                         | false    | true, false, (value: any, record: Object, req: Request) => boolean |
+| enum          | Array                                     | false    | any[]                                                              |
+| readOnly      | boolean                                   | false    | true, false                                                        |
+| immutable     | boolean                                   | false    | true, false                                                        |
+| nullable      | boolean                                   | false    | true, false                                                        |
+| validator     | function                                  | false    | (value: any, record: Object, req: Request) => boolean              |
+| writeModifier | function                                  | false    | (value: any, record: Object, req: Request) => any                  |
 
 ## Schema Validation
 
 A function that will validate schemas is available. It can be used as follows;
 
 ```js
-const { validateSchema } = require("firebase-framework");
-const services = require("./services");
+const { validateSchema } = require('firebase-framework');
+const services = require('./services');
 
 services.forEach(validateSchema);
 ```
@@ -182,12 +200,12 @@ Event Handlers have the following signature:
 
 Message:
 
-| key           | description                                                                       |
-| ------------- | --------------------------------------------------------------------------------- |
-| data          | data transmitted with the message (already parsed JSON)                           |
-| dataBefore    | only on db change triggers, describes the data before the change                  |
-| changeContext | context of a db change event message (db changes are proxied over Google PubSub ) |
-| type          | type of db change the occurred, ['create', 'update', 'delete']                    |
+| key           | description                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| data          | data transmitted with the message (already parsed JSON)                                         |
+| dataBefore    | only on db change triggers set off by an update operation, describes the data before the change |
+| changeContext | context of a db change event message (db changes are proxied over Google PubSub )               |
+| type          | type of db change the occurred, ['create', 'update', 'delete']                                  |
 
 ## Deployment
 
@@ -245,7 +263,7 @@ async function (setComplete, message, context){
 
 In the case of a counter where a transaction or batch is used to update a value,
 the idempotent success confirmation callback should be run inside of the transaction.
-This is done by calling `setComplete` within your transaction and passing it a reference to your transaction.
+This is done by calling `setComplete` within your transaction and passing it a reference to your transaction or passing it the batch reference.
 
 ```js
 async function (setComplete, message, context){

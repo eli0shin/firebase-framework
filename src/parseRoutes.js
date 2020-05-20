@@ -1,14 +1,14 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const validateFields = require("./validateFields");
-const setDefaults = require("./validateFields/setDefaults");
-const applyModifiers = require("./validateFields/applyModifiers");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const validateFields = require('./validateFields');
+const setDefaults = require('./validateFields/setDefaults').middleware;
+const applyModifiers = require('./validateFields/applyModifiers').middleware;
 
 const defaultCorsOptions = {
   origin: true,
-  methods: "GET,PUT,POST,DELETE,OPTIONS",
-  allowedHeaders: "token, role, content-type"
+  methods: 'GET,PUT,POST,DELETE,OPTIONS',
+  allowedHeaders: 'token, role, content-type'
 };
 
 const defaultValidatePrivilege = _privilege => (_req, _res, next) => next();
@@ -22,58 +22,80 @@ module.exports = (
   },
   service
 ) => {
-  const { routes, schema, postSchema = null } = service;
+  const {
+    routes,
+    schema,
+    postSchema = null,
+    middleware: serviceMiddleware = [],
+    keepAlive = false
+  } = service;
 
   const app = express();
 
   app.use(helmet());
-  app.disable("x-powered-by");
+  app.disable('x-powered-by');
   if (corsEnabled) {
-    app.options("*", cors(corsOptions));
+    app.options('*', cors(corsOptions));
     app.use(cors(corsOptions));
   }
   app.use(express.json());
+
+  if (keepAlive) {
+    app.get('/heartbeat', (_, res) =>
+      res.status(200).send({ status: 'success' })
+    );
+  }
 
   routes.forEach(
     ({
       path,
       method,
       function: toExecute,
-      privilege = "any",
-      ignoreBody = false
+      privilege = 'any',
+      ignoreBody = false,
+      schema: routeSchema = null,
+      middleware: routeMiddleware = []
     }) => {
       if (ignoreBody) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
           ...middleware,
+          ...serviceMiddleware,
+          ...routeMiddleware,
           handleRequest(privilege, toExecute)
         );
-      } else if (method === "post" && (postSchema || schema)) {
+      } else if (method === 'post' && (routeSchema || postSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          validateFields(postSchema || schema),
+          ...middleware,
+          ...serviceMiddleware,
+          ...routeMiddleware,
+          validateFields(routeSchema || postSchema || schema),
           setDefaults(schema),
           applyModifiers(service),
-          ...middleware,
           handleRequest(privilege, toExecute)
         );
-      } else if (method === "put" && schema) {
+      } else if (method === 'put' && (routeSchema || schema)) {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          validateFields(schema),
-          applyModifiers(service),
           ...middleware,
+          ...serviceMiddleware,
+          ...routeMiddleware,
+          validateFields(routeSchema || schema),
+          applyModifiers(service),
           handleRequest(privilege, toExecute)
         );
       } else {
         app[method](
           `${path}`,
           validatePrivilege(privilege),
-          applyModifiers(service),
           ...middleware,
+          ...serviceMiddleware,
+          ...routeMiddleware,
+          applyModifiers(service),
           handleRequest(privilege, toExecute)
         );
       }
@@ -95,10 +117,10 @@ const withResponse = handler => async (req, res) => {
       .set(headers)
       .send(message);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(error.statusCode || 500)
-      .send({ status: "error", error: error.message });
+      .send({ status: 'error', error: error.message });
   }
 };
 
@@ -106,17 +128,17 @@ const handleRequest = (privilege, callback) => (req, res) =>
   withResponse(getHandlerForRole(privilege, callback, req))(req, res);
 
 const getHandlerForRole = (privilege, callback, req) => {
-  if (typeof privilege !== "object") {
+  if (typeof privilege !== 'object') {
     return callback;
   }
-  if (req.headers.role && typeof req.headers.role === "function") {
-    return req.headers.role;
+  if (req.headers.role && typeof privilege[req.headers.role] === 'function') {
+    return privilege[req.headers.role];
   }
-  if (typeof privilege.any === "function") {
+  if (typeof privilege.any === 'function') {
     return privilege.any;
   }
   return sendError;
 };
 
 const sendError = (_req, res) =>
-  res.status(500).send({ status: "error", error: "internal error" });
+  res.status(500).send({ status: 'error', error: 'internal error' });

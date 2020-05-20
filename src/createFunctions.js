@@ -1,8 +1,9 @@
-const functions = require("firebase-functions");
-const parseRoutes = require("./parseRoutes");
-const publishChanges = require("./publishChanges");
-const parseMessage = require("./pubSub/parseMessage");
-const withIdempotency = require("./ensureIdempotent");
+const functions = require('firebase-functions');
+const parseRoutes = require('./parseRoutes');
+const publishChanges = require('./publishChanges');
+const parseMessage = require('./pubSub/parseMessage');
+const withIdempotency = require('./ensureIdempotent');
+const keepFunctionAlive = require('./keepFunctionAlive');
 
 const fromEntries = [(acc, [key, value]) => ({ ...acc, [key]: value }), {}];
 
@@ -41,11 +42,25 @@ const setupDBTriggers = service =>
       }
     : {};
 
-const setupSchedule = service => ({ time, name, function: toExecute }) => [
+const setupKeepAlive = service =>
+  service.keepAlive
+    ? {
+        [`${service.basePath}_keep_alive`]: functions.pubsub
+          .schedule('every 5 minutes')
+          .onRun(keepFunctionAlive(service))
+      }
+    : {};
+
+const setupSchedule = service => ({
+  time,
+  name,
+  function: toExecute,
+  timeZone = 'America/New_York'
+}) => [
   [`${service.basePath}_${name}`],
   functions.pubsub
     .schedule(time)
-    .timeZone("America/New_York")
+    .timeZone(timeZone)
     .onRun(toExecute)
 ];
 
@@ -56,11 +71,11 @@ const setupSchedules = service =>
 
 const setupEvent = service => ({
   topic,
-  type = "",
+  type = '',
   function: toExecute,
   ensureIdempotent = false
 }) => {
-  const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ""}`;
+  const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ''}`;
 
   return [
     functionName,
@@ -85,7 +100,8 @@ const parseConfig = (config, service) => ({
   ...setupRoutes(config, service),
   ...setupSchedules(service),
   ...setupDBTriggers(service),
-  ...setupEvents(service)
+  ...setupEvents(service),
+  ...setupKeepAlive(service)
 });
 
 const createFunctions = (config, services) =>

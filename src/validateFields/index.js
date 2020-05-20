@@ -1,16 +1,13 @@
 module.exports = schema => async (req, res, next) => {
   try {
     Object.entries(req.body).forEach(([key, value]) => {
-      if (
-        typeof schema[key] !== 'undefined' &&
-        !schema[key].readOnly
-      ) {
+      if (typeof schema[key] !== 'undefined' && !schema[key].readOnly) {
         if (Array.isArray(schema[key].type)) {
           if (!schema[key].type.includes(typeof value)) {
             throw new TypeError(
-              `invalid value for ${key}, must be one of ${schema[
-                key
-              ].type.join(', ')}. found: ${typeof value}`,
+              `invalid value for ${key}, must be one of ${schema[key].type.join(
+                ', '
+              )}. found: ${typeof value}`
             );
           }
         } else {
@@ -23,24 +20,20 @@ module.exports = schema => async (req, res, next) => {
             throw new TypeError(
               `invalid value for ${key}, must be of type ${
                 schema[key].type
-              }. found ${typeof value}`,
+              }. found ${typeof value}`
             );
           }
         }
 
         if (Array.isArray(schema[key].enum)) {
           if (!schema[key].enum.includes(value)) {
-            throw new TypeError(
-              `${value}: is not valid for key: ${key}`,
-            );
+            throw new TypeError(`${value}: is not valid for key: ${key}`);
           }
         }
 
         if (typeof schema[key].validator === 'function') {
-          if (!schema[key].validator(value, req.body)) {
-            throw new TypeError(
-              `${value}: is not valid for key: ${key}`,
-            );
+          if (!schema[key].validator(value, req.body, req)) {
+            throw new TypeError(`${value}: is not valid for key: ${key}`);
           }
         }
       } else {
@@ -50,22 +43,13 @@ module.exports = schema => async (req, res, next) => {
     });
 
     if (req.method === 'POST') {
-      Object.entries(schema).forEach(
-        ([key, { required }]) => {
-          const isRequired =
-            typeof required === 'function'
-              ? required(req.body)
-              : required;
-          if (
-            typeof req.body[key] === 'undefined' &&
-            isRequired
-          ) {
-            throw new TypeError(
-              `${key} is required and missing`,
-            );
-          }
-        },
-      );
+      Object.entries(schema).forEach(([key, { required }]) => {
+        const isRequired =
+          typeof required === 'function' ? required(req.body, req) : required;
+        if (typeof req.body[key] === 'undefined' && isRequired) {
+          throw new TypeError(`${key} is required and missing`);
+        }
+      });
     }
 
     if (req.method === 'PUT') {
@@ -82,7 +66,7 @@ module.exports = schema => async (req, res, next) => {
 
     return res.status(400).send({
       status: 'error',
-      error: error.message,
+      error: error.message
     });
   }
 };
