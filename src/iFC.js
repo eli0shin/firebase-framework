@@ -39,8 +39,6 @@ async function ifc(service, options = defaultOptions, req = {}) {
     FUNCTIONS_EMULATOR === 'true' ||
     IS_FIREBASE_CLI === 'true';
 
-  console.log('ifc -> isLocalhost', isLocalhost);
-
   const port = process.env.PORT || 5000;
 
   const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
@@ -51,9 +49,6 @@ async function ifc(service, options = defaultOptions, req = {}) {
   const cloudResourceLocation = isLocalhost
     ? firebaseConfig.cloudResourceLocation || region
     : X_GOOGLE_FUNCTION_REGION || region;
-
-  console.log('ifc -> projectId', projectId);
-  console.log('ifc -> cloudResourceLocation', cloudResourceLocation);
 
   const reqUrl = isLocalhost
     ? `http://${host}/${projectId}/${cloudResourceLocation}1`
