@@ -4,6 +4,7 @@ const publishChanges = require('./publishChanges');
 const parseMessage = require('./pubSub/parseMessage');
 const withIdempotency = require('./ensureIdempotent');
 const keepFunctionAlive = require('./keepFunctionAlive');
+const configStore = require('./configStore');
 
 const fromEntries = [(acc, [key, value]) => ({ ...acc, [key]: value }), {}];
 
@@ -13,45 +14,50 @@ const setupRoutes = (config, service) =>
   Array.isArray(service.routes)
     ? {
         [service.basePath]: functions
+          .region(config.region)
           .runWith(config.runtimeOptions || service.runtimeOptions || {})
           .https.onRequest(parseRoutes(config, service)),
       }
     : {};
 
-const setupOnCreate = service =>
+const setupOnCreate = (config, service) =>
   functions.firestore
+    .region(config.region)
     .document(service.resourcePath)
     .onCreate(publishChanges(service.basePath));
 
-const setupOnUpdate = service =>
+const setupOnUpdate = (config, service) =>
   functions.firestore
+    .region(config.region)
     .document(service.resourcePath)
     .onUpdate(publishChanges(service.basePath));
 
-const setupOnDelete = service =>
+const setupOnDelete = (config, service) =>
   functions.firestore
+    .region(config.region)
     .document(service.resourcePath)
     .onDelete(publishChanges(service.basePath));
 
-const setupDBTriggers = service =>
+const setupDBTriggers = (config, service) =>
   service.publishChanges
     ? {
-        [`${service.basePath}_onCreate`]: setupOnCreate(service),
-        [`${service.basePath}_onUpdate`]: setupOnUpdate(service),
-        [`${service.basePath}_onDelete`]: setupOnDelete(service),
+        [`${service.basePath}_onCreate`]: setupOnCreate(config, service),
+        [`${service.basePath}_onUpdate`]: setupOnUpdate(config, service),
+        [`${service.basePath}_onDelete`]: setupOnDelete(config, service),
       }
     : {};
 
-const setupKeepAlive = service =>
+const setupKeepAlive = (config, service) =>
   service.keepAlive
     ? {
-        [`${service.basePath}_keep_alive`]: functions.pubsub
-          .schedule('every 5 minutes')
+        [`${service.basePath}_keep_alive`]: functions
+          .region(config.region)
+          .pubsub.schedule('every 5 minutes')
           .onRun(keepFunctionAlive(service)),
       }
     : {};
 
-const setupSchedule = service => ({
+const setupSchedule = (config, service) => ({
   time,
   name,
   function: toExecute,
@@ -60,18 +66,21 @@ const setupSchedule = service => ({
 }) => [
   [`${service.basePath}_${name}`],
   functions
+    .region(config.region)
     .runWith(runtimeOptions || service.runtimeOptions || {})
     .pubsub.schedule(time)
     .timeZone(timeZone)
     .onRun(toExecute),
 ];
 
-const setupSchedules = service =>
+const setupSchedules = (config, service) =>
   Array.isArray(service.schedule)
-    ? service.schedule.map(setupSchedule(service)).reduce(...fromEntries)
+    ? service.schedule
+        .map(setupSchedule(config, service))
+        .reduce(...fromEntries)
     : {};
 
-const setupEvent = service => ({
+const setupEvent = (config, service) => ({
   topic,
   type = '',
   function: toExecute,
@@ -83,6 +92,7 @@ const setupEvent = service => ({
   return [
     functionName,
     functions
+      .region(config.region)
       .runWith(runtimeOptions || service.runtimeOptions || {})
       .pubsub.topic(topic)
       .onPublish(
@@ -95,22 +105,25 @@ const setupEvent = service => ({
   ];
 };
 
-const setupEvents = service =>
+const setupEvents = (config, service) =>
   Array.isArray(service.events)
-    ? service.events.map(setupEvent(service)).reduce(...fromEntries)
+    ? service.events.map(setupEvent(config, service)).reduce(...fromEntries)
     : {};
 
 const parseConfig = (config, service) => ({
   ...setupRoutes(config, service),
-  ...setupSchedules(service),
-  ...setupDBTriggers(service),
-  ...setupEvents(service),
-  ...setupKeepAlive(service),
+  ...setupSchedules(config, service),
+  ...setupDBTriggers(config, service),
+  ...setupEvents(config, service),
+  ...setupKeepAlive(config, service),
 });
 
-const createFunctions = (config, services) =>
-  services
-    .map(service => parseConfig(config, service))
+const createFunctions = (config = {}, services) => {
+  configStore.config = { ...configStore.config, ...config };
+
+  return services
+    .map(service => parseConfig(configStore.config, service))
     .reduce(...flattenObjects);
+};
 
 module.exports = createFunctions;

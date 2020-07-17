@@ -1,8 +1,9 @@
 const axios = require('axios');
+const configStore = require('./configStore');
 
 const defaultOptions = {
   url: '',
-  headers: {}
+  headers: {},
 };
 
 /**
@@ -20,24 +21,38 @@ const defaultOptions = {
  *   used to pass through required prams including auth information to the remote service
  */
 async function ifc(service, options = defaultOptions, req = {}) {
-  const { X_GOOGLE_GCP_PROJECT, X_GOOGLE_FUNCTION_REGION } = process.env;
+  const {
+    X_GOOGLE_GCP_PROJECT,
+    X_GOOGLE_FUNCTION_REGION,
+    NODE_ENV,
+    FIREBASE_CONFIG,
+    FUNCTIONS_EMULATOR,
+    IS_FIREBASE_CLI,
+  } = process.env;
+  const firebaseConfig =
+    typeof FIREBASE_CONFIG === 'string' ? JSON.parse(FIREBASE_CONFIG) : {};
 
-  const isLocalhost = !X_GOOGLE_FUNCTION_REGION;
+  const { region } = configStore.config;
+
+  const isLocalhost =
+    NODE_ENV !== 'production' ||
+    FUNCTIONS_EMULATOR === 'true' ||
+    IS_FIREBASE_CLI === 'true';
 
   const port = process.env.PORT || 5000;
 
   const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
 
   const projectId = isLocalhost
-    ? JSON.parse(process.env.FIREBASE_CONFIG).projectId
-    : null;
+    ? firebaseConfig.projectId
+    : X_GOOGLE_GCP_PROJECT || firebaseConfig.projectId;
   const cloudResourceLocation = isLocalhost
-    ? JSON.parse(process.env.FIREBASE_CONFIG).cloudResourceLocation
-    : null;
+    ? firebaseConfig.cloudResourceLocation || region
+    : X_GOOGLE_FUNCTION_REGION || region;
 
   const reqUrl = isLocalhost
     ? `http://${host}/${projectId}/${cloudResourceLocation}1`
-    : `https://${X_GOOGLE_FUNCTION_REGION}-${X_GOOGLE_GCP_PROJECT}.cloudfunctions.net`;
+    : `https://${cloudResourceLocation}-${projectId}.cloudfunctions.net`;
 
   const { url, headers = {}, ...otherOptions } = options;
 
@@ -45,9 +60,9 @@ async function ifc(service, options = defaultOptions, req = {}) {
     url: `${reqUrl}/${service}/${url}`,
     headers: {
       ...reqHeaders,
-      ...headers
+      ...headers,
     },
-    ...otherOptions
+    ...otherOptions,
   });
 }
 

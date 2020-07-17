@@ -54,12 +54,13 @@ module.exports = createFunctions(config, services);
 
 The config object can contain the following values:
 
-| key               | required | default                                                                                            | type       | description                                                                                                                                              |
-| ----------------- | -------- | -------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| validatePrivilege | false    | (privilege) => (req, res, next) => next()                                                          | Function   | A function that accepts a privilege and returns an expressJs middleware function to validate wheter the client has the correct privilege for the request |
-| middleware        | false    | []                                                                                                 | Function[] | An array of expressJs middlewares to be added to all routes across all services                                                                          |
-| corsEnabled       | false    | true                                                                                               | boolean    | whether the expressJs cors middleware should be enabled https://www.npmjs.com/package/cors                                                               |
-| corsOptions       | false    | {origin: true,methods: "GET,PUT,POST,DELETE,OPTIONS", allowedHeaders: "token, role, content-type"} | Object     | expressJs cors middleware options https://www.npmjs.com/package/cors#configuring-cors                                                                    |
+| key               | required | default                                                                                            | type       | description                                                                                                                                               |
+| ----------------- | -------- | -------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| region            | false    | us-central1                                                                                        | string     | GCP region in which to deploy functions. Valid values are listed here: https://firebase.google.com/docs/functions/locations                               |
+| validatePrivilege | false    | (privilege) => (req, res, next) => next()                                                          | Function   | A function that accepts a privilege and returns an expressJs middleware function to validate whether the client has the correct privilege for the request |
+| middleware        | false    | []                                                                                                 | Function[] | An array of expressJs middleware to be added to all routes across all services                                                                            |
+| corsEnabled       | false    | true                                                                                               | boolean    | whether the expressJs cors middleware should be enabled https://www.npmjs.com/package/cors                                                                |
+| corsOptions       | false    | {origin: true,methods: "GET,PUT,POST,DELETE,OPTIONS", allowedHeaders: "token, role, content-type"} | Object     | expressJs cors middleware options https://www.npmjs.com/package/cors#configuring-cors                                                                     |
 
 #### Creating your first service
 
@@ -124,15 +125,14 @@ module.exports = [hello];
 
 #### Routes
 
-| key            | required | type              | description                                                                                                                                                                                                                                                |
-| -------------- | -------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| path           | true     | string            | expressJs style paths that can contain parameters                                                                                                                                                                                                          |
-| method         | true     | string            | ['get', 'post', 'put', 'delete']                                                                                                                                                                                                                           |
-| function       | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)                                                                                                                                                          |
-| privilege      | false    | string            | one of the privileges defined in validatePrivilege middleware                                                                                                                                                                                              |
-| ignoreBody     | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema                                                                                                                                                 |
-| middleware     | false    | Array<Middleware> | an array of middleware that will apply to this route                                                                                                                                                                                                       |
-| runtimeOptions | false    | object            | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |  |
+| key        | required | type              | description                                                                                                |
+| ---------- | -------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| path       | true     | string            | expressJs style paths that can contain parameters                                                          |
+| method     | true     | string            | ['get', 'post', 'put', 'delete']                                                                           |
+| function   | false    | function          | to be executed when a request reaches the defined `path`(optional if privilege defines functions)          |
+| privilege  | false    | string            | one of the privileges defined in validatePrivilege middleware                                              |
+| ignoreBody | false    | boolean           | if set to true the body of POST / PUT requests to the route will not be checked against the service schema |
+| middleware | false    | Array<Middleware> | an array of middleware that will apply to this route                                                       |
 
 #### Events
 

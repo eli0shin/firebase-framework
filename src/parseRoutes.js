@@ -5,21 +5,8 @@ const validateFields = require('./validateFields');
 const setDefaults = require('./validateFields/setDefaults').middleware;
 const applyModifiers = require('./validateFields/applyModifiers').middleware;
 
-const defaultCorsOptions = {
-  origin: true,
-  methods: 'GET,PUT,POST,DELETE,OPTIONS',
-  allowedHeaders: 'token, role, content-type'
-};
-
-const defaultValidatePrivilege = _privilege => (_req, _res, next) => next();
-
 module.exports = (
-  {
-    validatePrivilege = defaultValidatePrivilege,
-    middleware = [],
-    corsEnabled = true,
-    corsOptions = defaultCorsOptions
-  },
+  { validatePrivilege, middleware, corsEnabled, corsOptions },
   service
 ) => {
   const {
@@ -27,7 +14,7 @@ module.exports = (
     schema,
     postSchema = null,
     middleware: serviceMiddleware = [],
-    keepAlive = false
+    keepAlive = false,
   } = service;
 
   const app = express();
@@ -54,7 +41,7 @@ module.exports = (
       privilege = 'any',
       ignoreBody = false,
       schema: routeSchema = null,
-      middleware: routeMiddleware = []
+      middleware: routeMiddleware = [],
     }) => {
       if (ignoreBody) {
         app[method](
@@ -112,10 +99,7 @@ const withResponse = handler => async (req, res) => {
 
     const [status, message, headers = {}] = result;
 
-    return res
-      .status(status)
-      .set(headers)
-      .send(message);
+    return res.status(status).set(headers).send(message);
   } catch (error) {
     console.error(error);
     return res
