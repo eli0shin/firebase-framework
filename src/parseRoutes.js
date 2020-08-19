@@ -92,7 +92,7 @@ module.exports = (
   );
 
   app.use(`/${service.basePath}`, (req, res, next) => {
-    if (!req.hostname.includes('cloudfunctions.net')) {
+    if (!req.host.includes('cloudfunctions.net')) {
       console.log('using service router');
       router(req, res, next);
     } else {
@@ -101,7 +101,7 @@ module.exports = (
   });
 
   app.use('/', (req, res, next) => {
-    if (req.hostname.includes('cloudfunctions.net')) {
+    if (req.host.includes('cloudfunctions.net')) {
       console.log('using base router');
       router(req, res, next);
     } else {
