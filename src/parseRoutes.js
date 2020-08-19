@@ -33,6 +33,8 @@ module.exports = (
     );
   }
 
+  const router = new express.Router();
+
   routes.forEach(
     ({
       path,
@@ -44,7 +46,7 @@ module.exports = (
       middleware: routeMiddleware = [],
     }) => {
       if (ignoreBody) {
-        app[method](
+        router[method](
           `${path}`,
           validatePrivilege(privilege),
           ...middleware,
@@ -53,7 +55,7 @@ module.exports = (
           handleRequest(privilege, toExecute)
         );
       } else if (method === 'post' && (routeSchema || postSchema || schema)) {
-        app[method](
+        router[method](
           `${path}`,
           validatePrivilege(privilege),
           ...middleware,
@@ -65,7 +67,7 @@ module.exports = (
           handleRequest(privilege, toExecute)
         );
       } else if (method === 'put' && (routeSchema || schema)) {
-        app[method](
+        router[method](
           `${path}`,
           validatePrivilege(privilege),
           ...middleware,
@@ -76,7 +78,7 @@ module.exports = (
           handleRequest(privilege, toExecute)
         );
       } else {
-        app[method](
+        router[method](
           `${path}`,
           validatePrivilege(privilege),
           ...middleware,
@@ -88,6 +90,22 @@ module.exports = (
       }
     }
   );
+
+  app.use(`/${service.basePath}`, (req, res, next) => {
+    if (!req.hostname.includes('cloudfunctions.net')) {
+      router(req, res, next);
+    } else {
+      next();
+    }
+  });
+
+  app.use('/', (req, res, next) => {
+    if (req.hostname.includes('cloudfunctions.net')) {
+      router(req, res, next);
+    } else {
+      next();
+    }
+  });
 
   return app;
 };
