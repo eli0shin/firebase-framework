@@ -92,37 +92,7 @@ module.exports = (
   );
 
   app.use(`/${service.basePath}`, router);
-  // (req, res, next) => {
-  // console.log('req.host', req.host);
-
-  // console.log('req.hostname', req.hostname);
-  // const matcher = '/' + service.basePath;
-  // console.log('matcher', matcher);
-  // console.log('req.path.startsWith(matcher)', req.path.startsWith(matcher));
-  // if (req.path.startsWith('/' + service.basePath)) {
-  // console.log('using service router');
-  // router(req, res, next);
-  // } else {
-  //   next();
-  // }
-  // });
-
-  app.use(
-    '/',
-    router
-    // console.log('req.host', req.host);
-    // console.log('req.path', req.path);
-    // const matcher = '/' + service.basePath;
-    // console.log('matcher', matcher);
-    // console.log('req.path.startsWith(matcher)', req.path.startsWith(matcher));
-    // if (!req.path.startsWith(matcher)) {
-    //   console.log('using base router');
-    // router(req, res, next);
-    // } else {
-    //   next();
-    // }
-    // }
-  );
+  app.use('/', router);
 
   return app;
 };

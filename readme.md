@@ -287,3 +287,12 @@ To request data from a service the `iFC` inter-function communicator can be used
 It is simply a http client wrapped in a function that will automatically find and make a call to a service given standard http parameters.
 
 Additional documentation can be found in `iFC.js`
+
+## Custom domains
+
+Firebase supports custom domains for functions via firebase hosting. The official firebase docs are available here: <https://firebase.google.com/docs/hosting/functions>.
+There is a bug (maybe?) in the firebase runtime that effects functions using a custom domain.
+This framework uses an express router under the hood for all http functions. When a request comes in through the default firebase url to the `/` path of a service with a `basePath` of `users` the request path is `/`. This matches the configured route. When the same function is reached via a firebase hosting rule that directs `<your-domain>/users` to the `users` function the request path is `/users`.
+We cannot check the domain of the request because the request domain is the same whether the requests originates from a custom domain or the default one. In order to provide support for both use-cases we have to mount the service's express.js router to 2 paths: `/` and `/<service-basePath>`, in this case `/` and `/users`.
+For many projects this will present no issue but in the case of a route that looks like this `/users/users` the behavior may be unpredictable.
+Hopefully in the future this issue will be fixed in the firebase runtime by the firebase team. Until then we must live with the constraints that this provides.
