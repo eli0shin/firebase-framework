@@ -95,7 +95,7 @@ module.exports = (
     console.log('req.host', req.host);
 
     console.log('req.hostname', req.hostname);
-    if (req.path.startsWith(service.basePath)) {
+    if (req.path.startsWith('/' + service.basePath)) {
       console.log('using service router');
       router(req, res, next);
     } else {
@@ -106,7 +106,7 @@ module.exports = (
   app.use('/', (req, res, next) => {
     console.log('req.host', req.host);
     console.log('req.path', req.path);
-    if (!req.path.startsWith(service.basePath)) {
+    if (!req.path.startsWith('/' + service.basePath)) {
       console.log('using base router');
       router(req, res, next);
     } else {
