@@ -5,6 +5,7 @@ const parseMessage = require('./pubSub/parseMessage');
 const withIdempotency = require('./ensureIdempotent');
 const keepFunctionAlive = require('./keepFunctionAlive');
 const configStore = require('./configStore');
+const ignoreOldEvents = require('./ignoreOldEvents');
 
 const fromEntries = [(acc, [key, value]) => ({ ...acc, [key]: value }), {}];
 
@@ -57,21 +58,24 @@ const setupKeepAlive = (config, service) =>
       }
     : {};
 
-const setupSchedule = (config, service) => ({
-  time,
-  name,
-  function: toExecute,
-  timeZone = 'America/New_York',
-  runtimeOptions,
-}) => [
-  [`${service.basePath}_${name}`],
-  functions
-    .region(config.region)
-    .runWith(runtimeOptions || service.runtimeOptions || {})
-    .pubsub.schedule(time)
-    .timeZone(timeZone)
-    .onRun(toExecute),
-];
+const setupSchedule =
+  (config, service) =>
+  ({
+    time,
+    name,
+    function: toExecute,
+    timeZone = 'America/New_York',
+    runtimeOptions,
+  }) =>
+    [
+      [`${service.basePath}_${name}`],
+      functions
+        .region(config.region)
+        .runWith(runtimeOptions || service.runtimeOptions || {})
+        .pubsub.schedule(time)
+        .timeZone(timeZone)
+        .onRun(toExecute),
+    ];
 
 const setupSchedules = (config, service) =>
   Array.isArray(service.schedule)
@@ -80,30 +84,37 @@ const setupSchedules = (config, service) =>
         .reduce(...fromEntries)
     : {};
 
-const setupEvent = (config, service) => ({
-  topic,
-  type = '',
-  function: toExecute,
-  ensureIdempotent = false,
-  runtimeOptions,
-}) => {
-  const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ''}`;
+const setupEvent =
+  (config, service) =>
+  ({
+    topic,
+    type = '',
+    function: toExecute,
+    ensureIdempotent = false,
+    maxAge,
+    runtimeOptions,
+  }) => {
+    const functionName = `${service.basePath}_${topic}${
+      type ? `_${type}` : ''
+    }`;
 
-  return [
-    functionName,
-    functions
-      .region(config.region)
-      .runWith(runtimeOptions || service.runtimeOptions || {})
-      .pubsub.topic(topic)
-      .onPublish(
-        parseMessage(
-          ensureIdempotent
-            ? withIdempotency(functionName, toExecute)
-            : toExecute
-        )
-      ),
-  ];
-};
+    const handlerWithIdempotency = ensureIdempotent
+      ? withIdempotency(functionName, toExecute)
+      : toExecute;
+
+    const handler = Boolean(maxAge)
+      ? ignoreOldEvents(maxAge, handlerWithIdempotency)
+      : handlerWithIdempotency;
+
+    return [
+      functionName,
+      functions
+        .region(config.region)
+        .runWith(runtimeOptions || service.runtimeOptions || {})
+        .pubsub.topic(topic)
+        .onPublish(parseMessage(handler)),
+    ];
+  };
 
 const setupEvents = (config, service) =>
   Array.isArray(service.events)
@@ -122,7 +133,7 @@ const createFunctions = (config = {}, services) => {
   configStore.config = { ...configStore.config, ...config };
 
   return services
-    .map(service => parseConfig(configStore.config, service))
+    .map((service) => parseConfig(configStore.config, service))
     .reduce(...flattenObjects);
 };
 
