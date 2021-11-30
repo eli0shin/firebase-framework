@@ -2,11 +2,9 @@
 
 ## Getting Started
 
-To begin you will need `nodejs` and `firebase-tools`
+This documentation describes features of the `firebase-framework` but generally does not cover firebase options in general. For example, to find out how you can specify a specific version of nodejs see the firebase docs here: https://firebase.google.com/docs/functions/manage-functions#set_nodejs_version
 
-nodejs v8.15.x is recommended because cloud functions by default uses node 8. \
-While it is not the most recent LTS build it can be downloaded here:
-<https://nodejs.org/download/release/v8.15.1/>
+To begin you will need `nodejs` and `firebase-tools`
 
 To install `firebase-tools` run
 
@@ -119,7 +117,7 @@ module.exports = [hello];
 | events         | false     | Array   | pub sub events that the service will listed to (see events below)                                                                                                                                                                                                                                                                                     |
 | schedule       | false     | Array   | cloud schedules that will trigger functions within this service (see schedule below)                                                                                                                                                                                                                                                                  |
 | keepAlive      | false     | boolean | whether a scheduled function should be set up that will trigger the http function (routes) every 5 minutes to prevent cold starts\*                                                                                                                                                                                                                   |
-| runtimeOptions | false     | object  | An object containing 3 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. `failurePolicy`: When `true`, the function should be retried on failure. default: `false`. |
+| runtimeOptions | false     | object  | Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions|
 | maxAge         | undefined | number  | The maxAge in ms before the event listener will not attempt to process an event. Can be used to prevent infinite retries of a retry-able event                                                                                                                                                                                                        |
 
 \* Though billing is required, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs \$0.10 (USD) per month, and there is an allowance of three free jobs per Google account (as of the time of writing). \* The keepAlive feature adds a route to the service at '/heartbeat'. This will not conflict with wildcard routes in the service but would conflict with a route named the same.
@@ -143,7 +141,7 @@ module.exports = [hello];
 | type             | false    | string   | the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a not about which types of events from the topic the function cares about                          |
 | function         | false    | function | to be executed when the described event is triggered                                                                                                                                                                                                       |
 | ensureIdempotent | false    | boolean  | whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once                                                                                      |
-| runtimeOptions   | false    | object   | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |
+| runtimeOptions   | false    | object   | Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions |
 
 #### Schedule
 
@@ -152,7 +150,7 @@ module.exports = [hello];
 | name           | true     | string   | The name of the schedule (it can be anything)                                                                                                                                                                                                              |
 | time           | true     | string   | Both Unix Crontab and AppEngine syntax are supported by Google Cloud Scheduler.                                                                                                                                                                            |
 | function       | false    | function | to be executed when the cronjob is run                                                                                                                                                                                                                     |
-| runtimeOptions | false    | object   | An object containing 2 optional properties. `memory`: amount of memory to allocate to the function, possible values are: '128MB', '256MB', '512MB', '1GB', and '2GB'. `timeoutSeconds`: timeout for the function in seconds, possible values are 0 to 540. |
+| runtimeOptions | false    | object   | Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions |
 
 ## Service Schemas
 
