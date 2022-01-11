@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const validateFields = require('./validateFields');
 const setDefaults = require('./validateFields/setDefaults').middleware;
 const applyModifiers = require('./validateFields/applyModifiers').middleware;
+const { handleVisibility } = require('./visibility');
 
 module.exports = (
   { validatePrivilege, middleware, corsEnabled, corsOptions },
@@ -44,48 +45,53 @@ module.exports = (
       ignoreBody = false,
       schema: routeSchema = null,
       middleware: routeMiddleware = [],
+      visibility,
     }) => {
       if (ignoreBody) {
         router[method](
           `${path}`,
           validatePrivilege(privilege),
+          validateVisibility(visibility),
           ...middleware,
           ...serviceMiddleware,
           ...routeMiddleware,
-          handleRequest(privilege, toExecute)
+          handleRequest(privilege, visibility, schema, toExecute)
         );
       } else if (method === 'post' && (routeSchema || postSchema || schema)) {
         router[method](
           `${path}`,
           validatePrivilege(privilege),
+          validateVisibility(visibility),
           ...middleware,
           ...serviceMiddleware,
           ...routeMiddleware,
           validateFields(routeSchema || postSchema || schema),
           setDefaults(schema),
           applyModifiers(service),
-          handleRequest(privilege, toExecute)
+          handleRequest(privilege, visibility, schema, toExecute)
         );
       } else if (method === 'put' && (routeSchema || schema)) {
         router[method](
           `${path}`,
           validatePrivilege(privilege),
+          validateVisibility(visibility),
           ...middleware,
           ...serviceMiddleware,
           ...routeMiddleware,
           validateFields(routeSchema || schema),
           applyModifiers(service),
-          handleRequest(privilege, toExecute)
+          handleRequest(privilege, visibility, schema, toExecute)
         );
       } else {
         router[method](
           `${path}`,
           validatePrivilege(privilege),
+          validateVisibility(visibility),
           ...middleware,
           ...serviceMiddleware,
           ...routeMiddleware,
           applyModifiers(service),
-          handleRequest(privilege, toExecute)
+          handleRequest(privilege, visibility, schema, toExecute)
         );
       }
     }
@@ -97,14 +103,18 @@ module.exports = (
   return app;
 };
 
-const withResponse = handler => async (req, res) => {
+const withResponse = (schema, handler) => async (req, res) => {
   try {
     const result = await handler(req, res);
     if (!Array.isArray(result)) return res.end();
 
     const [status, message, headers = {}] = result;
 
-    return res.status(status).set(headers).send(message);
+    const messageWithVisibility = req.mode
+      ? handleVisibility(req.mode, schema, message)
+      : message;
+
+    return res.status(status).set(headers).send(messageWithVisibility);
   } catch (error) {
     console.error(error);
     return res
@@ -113,10 +123,21 @@ const withResponse = handler => async (req, res) => {
   }
 };
 
-const handleRequest = (privilege, callback) => (req, res) =>
-  withResponse(getHandlerForRole(privilege, callback, req))(req, res);
+const handleRequest = (privilege, visibility, schema, callback) => (req, res) =>
+  withResponse(schema, getHandlerForRole(privilege, visibility, callback, req))(
+    req,
+    res
+  );
 
-const getHandlerForRole = (privilege, callback, req) => {
+const getHandlerForRole = (privilege, visibility, callback, req) => {
+  if (
+    req.mode &&
+    visibility &&
+    (req.mode !== visibility ||
+      (Array.isArray(visibility) && visibility.indexOf(mode) >= 0))
+  ) {
+    return sendError;
+  }
   if (typeof privilege !== 'object') {
     return callback;
   }
