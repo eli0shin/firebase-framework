@@ -7,7 +7,7 @@ const applyModifiers = require('./validateFields/applyModifiers').middleware;
 const { handleVisibility } = require('./visibility');
 
 module.exports = (
-  { validatePrivilege, middleware, corsEnabled, corsOptions },
+  { validatePrivilege, validateVisibility, middleware, corsEnabled, corsOptions },
   service
 ) => {
   const {
