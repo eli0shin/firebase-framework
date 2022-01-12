@@ -5,10 +5,12 @@ const defaultCorsOptions = {
 };
 
 const defaultValidatePrivilege = _privilege => (_req, _res, next) => next();
+const defaultValidateVisibility = _visibility => (_req, _res, next) => next();
 
 const defaultConfig = {
   region: 'us-central1',
   validatePrivilege: defaultValidatePrivilege,
+  validateVisibility: defaultValidateVisibility,
   middleware: [],
   corsEnabled: true,
   corsOptions: defaultCorsOptions,
