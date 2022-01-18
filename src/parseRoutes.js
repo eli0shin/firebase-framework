@@ -10,6 +10,7 @@ module.exports = (
   {
     validatePrivilege,
     validateVisibility,
+    unwrapResponse: configUnwrapResponse,
     middleware,
     corsEnabled,
     corsOptions,
@@ -52,7 +53,10 @@ module.exports = (
       schema: routeSchema = null,
       middleware: routeMiddleware = [],
       visibility,
+      unwrapResponse: routeUnwrapResponse,
     }) => {
+      const unwrapResponse = routeUnwrapResponse || configUnwrapResponse;
+
       if (ignoreBody) {
         router[method](
           `${path}`,
@@ -61,7 +65,7 @@ module.exports = (
           ...middleware,
           ...serviceMiddleware,
           ...routeMiddleware,
-          handleRequest(privilege, visibility, schema, toExecute)
+          handleRequest(privilege, visibility, schema, unwrapResponse, toExecute)
         );
       } else if (method === 'post' && (routeSchema || postSchema || schema)) {
         router[method](
@@ -74,7 +78,7 @@ module.exports = (
           validateFields(routeSchema || postSchema || schema),
           setDefaults(schema),
           applyModifiers(service),
-          handleRequest(privilege, visibility, schema, toExecute)
+          handleRequest(privilege, visibility, schema, unwrapResponse, toExecute)
         );
       } else if (method === 'put' && (routeSchema || schema)) {
         router[method](
@@ -86,7 +90,7 @@ module.exports = (
           ...routeMiddleware,
           validateFields(routeSchema || schema),
           applyModifiers(service),
-          handleRequest(privilege, visibility, schema, toExecute)
+          handleRequest(privilege, visibility, schema, unwrapResponse, toExecute)
         );
       } else {
         router[method](
@@ -97,7 +101,7 @@ module.exports = (
           ...serviceMiddleware,
           ...routeMiddleware,
           applyModifiers(service),
-          handleRequest(privilege, visibility, schema, toExecute)
+          handleRequest(privilege, visibility, schema, unwrapResponse, toExecute)
         );
       }
     }
@@ -109,7 +113,7 @@ module.exports = (
   return app;
 };
 
-const withResponse = (schema, handler) => async (req, res) => {
+const withResponse = (schema, handler, unwrapResponse) => async (req, res) => {
   try {
     const result = await handler(req, res);
     if (!Array.isArray(result)) return res.end();
@@ -117,7 +121,7 @@ const withResponse = (schema, handler) => async (req, res) => {
     const [status, message, headers = {}] = result;
 
     const messageWithVisibility = req.mode
-      ? handleVisibility(req.mode, schema, message)
+      ? handleVisibility(req.mode, schema, unwrapResponse, message)
       : message;
 
     return res.status(status).set(headers).send(messageWithVisibility);
@@ -129,8 +133,8 @@ const withResponse = (schema, handler) => async (req, res) => {
   }
 };
 
-const handleRequest = (privilege, visibility, schema, callback) => (req, res) =>
-  withResponse(schema, getHandlerForRole(privilege, visibility, callback, req))(
+const handleRequest = (privilege, visibility, unwrapResponse, schema, callback) => (req, res) =>
+  withResponse(schema, getHandlerForRole(privilege, visibility, callback, req), unwrapResponse)(
     req,
     res
   );
