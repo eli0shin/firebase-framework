@@ -4,10 +4,16 @@ const helmet = require('helmet');
 const validateFields = require('./validateFields');
 const setDefaults = require('./validateFields/setDefaults').middleware;
 const applyModifiers = require('./validateFields/applyModifiers').middleware;
-const { handleVisibility } = require('./visibility');
+const { handleVisibility, isVisible } = require('./visibility');
 
 module.exports = (
-  { validatePrivilege, validateVisibility, middleware, corsEnabled, corsOptions },
+  {
+    validatePrivilege,
+    validateVisibility,
+    middleware,
+    corsEnabled,
+    corsOptions,
+  },
   service
 ) => {
   const {
@@ -130,12 +136,7 @@ const handleRequest = (privilege, visibility, schema, callback) => (req, res) =>
   );
 
 const getHandlerForRole = (privilege, visibility, callback, req) => {
-  if (
-    req.mode &&
-    visibility &&
-    (req.mode !== visibility ||
-      (Array.isArray(visibility) && visibility.indexOf(mode) >= 0))
-  ) {
+  if (!isVisible(visibility, req.mode)) {
     return sendError;
   }
   if (typeof privilege !== 'object') {

@@ -42,3 +42,4 @@ function validateVisibility(visibility) {
 }
 
 module.exports.validateVisibility = validateVisibility;
+module.exports.isVisible = isVisible;
