@@ -133,7 +133,7 @@ const withResponse = (schema, handler, unwrapResponse) => async (req, res) => {
   }
 };
 
-const handleRequest = (privilege, visibility, unwrapResponse, schema, callback) => (req, res) =>
+const handleRequest = (privilege, visibility, schema, unwrapResponse, callback) => (req, res) =>
   withResponse(schema, getHandlerForRole(privilege, visibility, callback, req), unwrapResponse)(
     req,
     res
