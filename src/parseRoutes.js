@@ -152,6 +152,7 @@ const getHandlerForRole = (privilege, visibility, callback, req) => {
   if (typeof privilege.any === 'function') {
     return privilege.any;
   }
+  console.log('rejecting request due to lack of privilege', privilege, visibility, req.headers.role);
   return sendError;
 };
 
