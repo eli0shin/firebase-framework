@@ -140,7 +140,8 @@ const handleRequest = (privilege, visibility, schema, unwrapResponse, callback) 
   );
 
 const getHandlerForRole = (privilege, visibility, callback, req) => {
-  if (!isVisible(visibility, req.mode)) {
+  if (req.mode && !isVisible(visibility, req.mode)) {
+    console.error('rejecting request due to lack of visibility', visibility, req.mode);
     return sendError;
   }
   if (typeof privilege !== 'object') {
@@ -152,7 +153,7 @@ const getHandlerForRole = (privilege, visibility, callback, req) => {
   if (typeof privilege.any === 'function') {
     return privilege.any;
   }
-  console.log('rejecting request due to lack of privilege', privilege, visibility, req.headers.role);
+  console.error('rejecting request due to lack of privilege', privilege, visibility, req.headers.role);
   return sendError;
 };
 
