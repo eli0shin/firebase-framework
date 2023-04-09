@@ -2,11 +2,11 @@ import functions from 'firebase-functions';
 import parseRoutes from './parseRoutes';
 import publishChanges from './publishChanges';
 import { parseMessage } from './pubSub/parseMessage';
-import withIdempotency from './ensureIdempotent';
-import keepFunctionAlive from './keepFunctionAlive';
+import {withIdempotency} from './ensureIdempotent';
+import {keepFunctionAlive} from './keepFunctionAlive';
 import * as configStore from './configStore';
-import ignoreOldEvents from './ignoreOldEvents';
-import { Event, Schedule, ServiceConfiguration } from './types/Service';
+import {setupIgnoreOldEvents} from './ignoreOldEvents';
+import { Event, EventHandler, IdempotentEventHandler, Schedule, ServiceConfiguration } from './types/Service';
 import { Config } from './types/Config';
 import { Message } from 'firebase-functions/lib/providers/pubsub';
 
@@ -108,24 +108,24 @@ function setupSchedules(config: Config, service: ServiceConfiguration) {
 }
 
 function setupEvent(config: Config, service: ServiceConfiguration) {
-  return function handleEvent({
+  return function handleEvent<EventConfig extends Event>({
     topic,
     type = '',
     function: toExecute,
     ensureIdempotent = false,
     maxAge,
     runtimeOptions,
-  }: Event) {
+  }: EventConfig) {
     const functionName = `${service.basePath}_${topic}${
       type ? `_${type}` : ''
     }`;
 
     const handlerWithIdempotency = ensureIdempotent
-      ? withIdempotency(functionName, toExecute)
-      : toExecute;
+      ? withIdempotency(functionName, toExecute as IdempotentEventHandler)
+      : toExecute as EventHandler;
 
     const handler = Boolean(maxAge)
-      ? ignoreOldEvents(maxAge, handlerWithIdempotency)
+      ? setupIgnoreOldEvents(maxAge, handlerWithIdempotency)
       : handlerWithIdempotency;
 
     return [

@@ -62,9 +62,21 @@ export type Event = {
   /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
   type?: string;
   /** to be executed when the described event is triggered */
-  function: (message: any, context: EventContext) => any;
+  function: EventHandler;
   /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
-  ensureIdempotent?: boolean;
+  ensureIdempotent?: false;
+  /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
+  runtimeOptions?: RuntimeOptions;
+  maxAge?: number;
+} | {
+  /** the pub sub topic to subscribe to */
+  topic: string;
+  /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
+  type?: string;
+  /** to be executed when the described event is triggered */
+  function: IdempotentEventHandler;
+  /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
+  ensureIdempotent: true;
   /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
   runtimeOptions?: RuntimeOptions;
   maxAge?: number;
@@ -98,7 +110,6 @@ export type SchemaField = {
   required?:
     | boolean
     | (<T extends Record<string, unknown>>(
-        value: T[string],
         record: T,
         req: Request
       ) => boolean);
@@ -124,8 +135,14 @@ export type RouteHandler = (
 // Event Handlers
 export type EventHandler = (
   message: Message,
-  context: Context
-) => Promise<void> | void;
+  context: EventContext
+) => Promise<void>;
+
+export type IdempotentEventHandler = (
+  transaction: (t: FirebaseFirestore.Transaction) => Promise<void>,
+  message: Message,
+  context: EventContext
+) => Promise<void>;
 
 // Message
 export type Message<T = Record<string, unknown>> = {

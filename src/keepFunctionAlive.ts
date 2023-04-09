@@ -1,6 +1,7 @@
-const iFC = require('./iFC');
+import {iFC} from './iFC';
+import { ServiceConfiguration } from './types/Service';
 
-function keepFunctionAlive(service) {
+export function keepFunctionAlive(service: ServiceConfiguration) {
   const { basePath } = service;
   return async function pingKeepAliveFunction() {
     try {
@@ -12,5 +13,3 @@ function keepFunctionAlive(service) {
     }
   };
 }
-
-module.exports = keepFunctionAlive;

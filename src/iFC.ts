@@ -1,7 +1,14 @@
-const axios = require('axios');
-const configStore = require('./configStore');
+import axios from 'axios';
+import * as configStore from './configStore';
+import { ServiceConfiguration } from './types/Service';
+import { Request } from './types/Request';
 
-const defaultOptions = {
+
+type IFCOptions = {
+  url: string;
+  headers?: Record<string, string>;
+};
+const defaultOptions: IFCOptions = {
   url: '',
   headers: {},
 };
@@ -20,7 +27,7 @@ const defaultOptions = {
  * @param {req} Object - the req object passed the the function calling i_f_c
  *   used to pass through required prams including auth information to the remote service
  */
-async function ifc(service, options = defaultOptions, req = {}) {
+export async function iFC(service: string, options: IFCOptions = defaultOptions, req: Request = {} as Request) {
   const {
     X_GOOGLE_GCP_PROJECT,
     X_GOOGLE_FUNCTION_REGION,
@@ -65,5 +72,3 @@ async function ifc(service, options = defaultOptions, req = {}) {
     ...otherOptions,
   });
 }
-
-module.exports = ifc;
