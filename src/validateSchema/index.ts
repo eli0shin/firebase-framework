@@ -1,6 +1,7 @@
-const rules = require('./rules');
+import { Schema, SchemaField, ServiceConfiguration } from '../types/Service';
+import {rules} from './rules';
 
-module.exports = serviceConfig => {
+export function validateSchema(serviceConfig: ServiceConfiguration) {
   const {
     schema,
     postSchema = null,
@@ -22,7 +23,7 @@ module.exports = serviceConfig => {
   }
 };
 
-function validate(schema, basePath, customName = null) {
+function validate(schema: Schema, basePath: string, customName: string | null = null) {
   const { keyType, valueType, childTypes } = rules;
 
   try {
@@ -39,17 +40,18 @@ function validate(schema, basePath, customName = null) {
         `);
       }
 
-      Object.entries(config).forEach(
+      (Object.entries(config) as [keyof SchemaField, SchemaField[keyof SchemaField]][]).forEach(
         ([childKey, childValue]) => {
-          if (typeof childTypes[childKey] === 'undefined') {
+          const schemaFieldRule = childTypes[childKey]
+          if (typeof schemaFieldRule === 'undefined') {
             throw new Error(`
               Invalid param '${childKey}' for field '${key}'.
             `);
           }
 
-          if (Array.isArray(childTypes[childKey].type)) {
+          if (Array.isArray(schemaFieldRule.type)) {
             if (
-              !childTypes[childKey].type.includes(
+              !schemaFieldRule.type.includes(
                 typeof childValue,
               )
             ) {
@@ -58,7 +60,7 @@ function validate(schema, basePath, customName = null) {
               `);
             }
           } else if (
-            typeof childValue !== childTypes[childKey].type
+            typeof childValue !== schemaFieldRule.type
           ) {
             throw new Error(`
               Invalid value '${childValue}' at '${childKey}' for field '${key}'.
@@ -66,11 +68,12 @@ function validate(schema, basePath, customName = null) {
           }
 
           if (
-            typeof childTypes[childKey].validator ===
+            'validator' in schemaFieldRule &&
+            typeof schemaFieldRule.validator ===
             'function'
           ) {
             if (
-              !childTypes[childKey].validator(childValue)
+              !schemaFieldRule.validator(childValue)
             ) {
               throw new Error(`
                 Invalid value '${childValue}' at '${childKey}' for field '${key}'.
@@ -78,14 +81,14 @@ function validate(schema, basePath, customName = null) {
             }
           }
 
-          if (Array.isArray(childTypes[childKey].enum)) {
-            childTypes[childKey].enum.forEach(value => {
+          if ( 'enum' in schemaFieldRule && Array.isArray(schemaFieldRule.enum)) {
+            schemaFieldRule.enum.forEach(value => {
               if (
-                typeof value !== childTypes[childKey].type
+                typeof value !== schemaFieldRule.type
               ) {
                 throw new Error(`
                   Invalid value '${childValue}' at '${childKey}' for field '${key}. enum values must be of field type ${
-                  childTypes[childKey].type
+                  schemaFieldRule.type
                 }'.
                 `);
               }
@@ -98,7 +101,7 @@ function validate(schema, basePath, customName = null) {
         ([typeKey, { required }]) => {
           if (
             required &&
-            typeof config[typeKey] === 'undefined'
+            !(typeKey in config)
           ) {
             throw new Error(`
               Key '${typeKey}' is required at '${key}' but is missing'.

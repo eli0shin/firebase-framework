@@ -1,4 +1,4 @@
-module.exports = {
+export const rules = {
   keyType: "string",
   valueType: "object",
   childTypes: {
@@ -12,7 +12,7 @@ module.exports = {
     },
     enum: {
       type: "object",
-      validator: value => Array.isArray(value),
+      validator: (value: unknown ): value is Array<unknown> => Array.isArray(value),
       required: false
     },
     readOnly: {

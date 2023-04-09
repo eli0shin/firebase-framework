@@ -15,7 +15,7 @@ export type ServiceConfiguration = {
   /** should contain a reference to the imported schema file */
   schema?: Schema;
   /** optional alternative used for services that require special fields during creation */
-  postSchema?: object;
+  postSchema?: Schema;
   /** whether the service should publish changes to it's data as messages on cloud pub sub */
   publishChanges?: boolean;
   /** declares that the schema can contain `writeModifier` keys that define a function that will modify values before they are processes/saved */

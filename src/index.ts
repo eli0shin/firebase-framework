@@ -1,5 +1,5 @@
 import { createFunctions } from './createFunctions';
-import validateSchema from './validateSchema';
+import {validateSchema} from './validateSchema';
 import { setDefaults } from './validateFields/setDefaults';
 import { applyModifiers } from './validateFields/applyModifiers';
 import {iFC} from './iFC.js';
