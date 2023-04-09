@@ -1,4 +1,7 @@
-function isVisible(visibility, mode) {
+import { NextFunction, Response } from 'express';
+import { Request } from '../types/Request';
+
+export function isVisible(visibility: string | string[], mode: string) {
   return (
     !visibility ||
     visibility === mode ||
@@ -6,7 +9,11 @@ function isVisible(visibility, mode) {
   );
 }
 
-function removeInvisibleValues(mode, schema, returnValue) {
+function removeInvisibleValues<ReturnValue extends Record<string, unknown>>(
+  mode: string,
+  schema: Record<string, any>,
+  returnValue: ReturnValue
+) {
   const fields = Object.entries(returnValue);
 
   const modifiedValue = fields.reduce((acc, [key, value]) => {
@@ -17,14 +24,22 @@ function removeInvisibleValues(mode, schema, returnValue) {
     }
 
     return acc;
-  }, {});
+  }, {} as Record<string, unknown>);
 
   return modifiedValue;
 }
 
-function handleVisibility(mode, schema, unwrapResponse, returnValue) {
+export type UnwrapResponse = <T extends Record<string, any>>(
+  returnValue: T
+) => [any, (modifiedReturnValue: any) => Partial<T>];
+export function handleVisibility<ReturnValue extends Record<string, any>>(
+  mode: string,
+  schema: Record<string, unknown>,
+  unwrapResponse: UnwrapResponse,
+  returnValue: ReturnValue
+) {
   const [unwrappedResponse, rewrapResponse] = unwrapResponse(returnValue);
-  
+
   if (Array.isArray(unwrappedResponse)) {
     const modifiedValue = unwrappedResponse.map((value) =>
       removeInvisibleValues(mode, schema, value)
@@ -37,10 +52,12 @@ function handleVisibility(mode, schema, unwrapResponse, returnValue) {
   return rewrapResponse(modifiedValue);
 }
 
-module.exports.handleVisibility = handleVisibility;
-
-function validateVisibility(visibility) {
-  return function visibilityMiddleware(req, res, next) {
+export function validateVisibility(visibility: string | string[]) {
+  return function visibilityMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     if (!req.mode) {
       return next();
     }
@@ -53,6 +70,3 @@ function validateVisibility(visibility) {
     res.status(403).send({ status: 'unauthorized' });
   };
 }
-
-module.exports.validateVisibility = validateVisibility;
-module.exports.isVisible = isVisible;

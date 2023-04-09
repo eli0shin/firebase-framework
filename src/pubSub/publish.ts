@@ -1,6 +1,10 @@
 const { PubSub } = require('@google-cloud/pubsub');
 
-function publish(topic, type, message) {
+export function publish(
+  topic: string,
+  type: string,
+  message: Record<string, unknown>
+) {
   const pubsub = new PubSub();
 
   const data = JSON.stringify({
@@ -12,5 +16,3 @@ function publish(topic, type, message) {
 
   return pubsub.topic(topic).publish(dataBuffer);
 }
-
-module.exports = publish;

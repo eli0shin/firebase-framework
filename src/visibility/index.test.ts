@@ -1,6 +1,13 @@
-const { handleVisibility, validateVisibility } = require('.');
+import { Response } from 'express';
+import { UnwrapResponse, handleVisibility, validateVisibility } from '.';
+import { Request } from '../types/Request';
 
-const defaultUnwrapResponse = value => [value, modifiedValue => modifiedValue];
+const defaultUnwrapResponse = <T extends Record<string, unknown>>(
+  value: T
+): [T, (value: T) => T] => [
+  value as T,
+  (modifiedValue: T) => modifiedValue as T,
+];
 
 describe('handleVisibility', () => {
   it('does not modify external fields when mode is external', () => {
@@ -21,7 +28,12 @@ describe('handleVisibility', () => {
       email: 'test@test.net',
     };
 
-    const result = handleVisibility(mode, schema, defaultUnwrapResponse, returnValue);
+    const result = handleVisibility(
+      mode,
+      schema,
+      defaultUnwrapResponse,
+      returnValue
+    );
 
     expect(result).toEqual(returnValue);
   });
@@ -48,7 +60,12 @@ describe('handleVisibility', () => {
       name: 'fullName',
     };
 
-    const result = handleVisibility(mode, schema, defaultUnwrapResponse, returnValue);
+    const result = handleVisibility(
+      mode,
+      schema,
+      defaultUnwrapResponse,
+      returnValue
+    );
 
     expect(result).toEqual(expected);
   });
@@ -71,7 +88,12 @@ describe('handleVisibility', () => {
       email: 'test@test.net',
     };
 
-    const result = handleVisibility(mode, schema, defaultUnwrapResponse, returnValue);
+    const result = handleVisibility(
+      mode,
+      schema,
+      defaultUnwrapResponse,
+      returnValue
+    );
 
     expect(result).toEqual(returnValue);
   });
@@ -92,8 +114,18 @@ describe('handleVisibility', () => {
       email: 'test@test.net',
     };
 
-    const resultInternal = handleVisibility('internal', schema, defaultUnwrapResponse, returnValue);
-    const resultExternal = handleVisibility('external', schema, defaultUnwrapResponse, returnValue);
+    const resultInternal = handleVisibility(
+      'internal',
+      schema,
+      defaultUnwrapResponse,
+      returnValue
+    );
+    const resultExternal = handleVisibility(
+      'external',
+      schema,
+      defaultUnwrapResponse,
+      returnValue
+    );
 
     expect(resultInternal).toEqual(returnValue);
     expect(resultExternal).toEqual(returnValue);
@@ -114,35 +146,44 @@ describe('handleVisibility', () => {
 
     const returnValue = {
       status: 'success',
-      data: [{
-        name: 'fullName',
-        email: 'test@test.net',
-      }]
+      data: [
+        {
+          name: 'fullName',
+          email: 'test@test.net',
+        },
+      ],
     };
 
     const expected = {
       status: 'success',
-      data: [{
-        name: 'fullName',
-      }]
+      data: [
+        {
+          name: 'fullName',
+        },
+      ],
     };
 
-    const unwrapResponse = response => [response.data, modified => ({...response, data: modified})];
+    const unwrapResponse: UnwrapResponse = <T extends Record<string, any>>(
+      response: T
+    ) => [
+      response.data,
+      (modified) => ({ ...response, data: modified } as Partial<T>),
+    ];
 
     const result = handleVisibility(mode, schema, unwrapResponse, returnValue);
 
     expect(result).toEqual(expected);
-  })
+  });
 });
 
 describe('validateVisibility', () => {
   it('allows a request to continue if the mode is not set', () => {
-    const req = {};
+    const req = {} as Request;
     const next = jest.fn();
     // const sendBodyMock = jest.spyOn(() => () => undefined);
     const res = {
       status: jest.fn(),
-    };
+    } as unknown as Response;
 
     validateVisibility('INTERNAL')(req, res, next);
 
@@ -152,11 +193,11 @@ describe('validateVisibility', () => {
   it('allows a request to continue if the mode matches the visibility', () => {
     const req = {
       mode: 'INTERNAL',
-    };
+    } as Request;
     const next = jest.fn();
     const res = {
       status: jest.fn(),
-    };
+    } as unknown as Response;
 
     validateVisibility('INTERNAL')(req, res, next);
     validateVisibility(['INTERNAL', 'EXTERNAL'])(req, res, next);
@@ -167,12 +208,12 @@ describe('validateVisibility', () => {
   it('declines a request with 403 if the mode does not match the visibility', () => {
     const req = {
       mode: 'EXTERNAL',
-    };
+    } as Request;
     const next = jest.fn();
     const mockSend = jest.fn();
     const res = {
       status: jest.fn().mockImplementation(() => ({ send: mockSend })),
-    };
+    } as unknown as Response;
 
     validateVisibility('INTERNAL')(req, res, next);
 

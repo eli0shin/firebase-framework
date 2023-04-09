@@ -4,7 +4,8 @@
   "description": "A framework designed to increase productivity in serverless applications using firebase",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest --config=jest.config.js",
+    "build": "rm -rf dist && tsc"
   },
   "keywords": [
     "firebase",
@@ -29,6 +30,10 @@
     "helmet": "^3.22.0"
   },
   "devDependencies": {
-    "jest": "^27.4.7"
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
   }
 }
