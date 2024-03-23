@@ -1,10 +1,10 @@
-import { PubSub } from '@google-cloud/pubsub';
-import { Middleware } from './Config';
-import { EventContext, RuntimeOptions } from 'firebase-functions';
-import { ScheduleBuilder } from 'firebase-functions/lib/providers/pubsub';
-import { UnwrapResponse } from '../visibility';
-import { Request } from './Request';
-import { Response } from 'express';
+import { PubSub } from "@google-cloud/pubsub";
+import { Middleware } from "./Config";
+import { EventContext, RuntimeOptions } from "firebase-functions";
+import { ScheduleBuilder } from "firebase-functions/lib/providers/pubsub";
+import { UnwrapResponse } from "../visibility";
+import { Request } from "./Request";
+import { Response } from "express";
 
 // Service Configuration
 export type ServiceConfiguration = {
@@ -56,31 +56,33 @@ export type Route = {
 };
 
 // Events
-export type Event = {
-  /** the pub sub topic to subscribe to */
-  topic: string;
-  /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
-  type?: string;
-  /** to be executed when the described event is triggered */
-  function: EventHandler;
-  /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
-  ensureIdempotent?: false;
-  /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
-  runtimeOptions?: RuntimeOptions;
-  maxAge?: number;
-} | {
-  /** the pub sub topic to subscribe to */
-  topic: string;
-  /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
-  type?: string;
-  /** to be executed when the described event is triggered */
-  function: IdempotentEventHandler;
-  /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
-  ensureIdempotent: true;
-  /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
-  runtimeOptions?: RuntimeOptions;
-  maxAge?: number;
-};
+export type Event =
+  | {
+      /** the pub sub topic to subscribe to */
+      topic: string;
+      /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
+      type?: string;
+      /** to be executed when the described event is triggered */
+      function: EventHandler;
+      /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
+      ensureIdempotent?: false;
+      /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
+      runtimeOptions?: RuntimeOptions;
+      maxAge?: number;
+    }
+  | {
+      /** the pub sub topic to subscribe to */
+      topic: string;
+      /** the event type to listen to. This is passed to the subscriber but will not affect which message in the topic trigger the subscriber, it can function as a note about which types of events from the topic the function cares about */
+      type?: string;
+      /** to be executed when the described event is triggered */
+      function: IdempotentEventHandler;
+      /** whether the framework should check messages against a store (requires a firestore database in the project) to ensure that messages are never processed more than once */
+      ensureIdempotent: true;
+      /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
+      runtimeOptions?: RuntimeOptions;
+      maxAge?: number;
+    };
 
 // Schedule
 export type Schedule = {
@@ -90,39 +92,29 @@ export type Schedule = {
   time: string;
   timeZone?: string;
   /** to be executed when the cronjob is run */
-  function: Parameters<ScheduleBuilder['onRun']>[0];
+  function: Parameters<ScheduleBuilder["onRun"]>[0];
   /** Firebase runtime options usually passed to `runWith` as documented here: https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions */
   runtimeOptions?: RuntimeOptions;
 };
 
 // Service Schemas
 export type SchemaField = {
-  /** 'boolean', 'string', 'object', 'number' */
-  type: 'boolean' | 'string' | 'object' | 'number';
-  /** any, (record: Object, req: Request) => any / Promise<any> */
+  type: "boolean" | "string" | "object" | "number";
   default?:
     | boolean
     | string
     | object
     | number
     | ((...args: any[]) => any | Promise<any>);
-  /** boolean value or function that returns boolean to describe whether the value is required */
   required?:
     | boolean
-    | (<T extends Record<string, unknown>>(
-        record: T,
-        req: Request
-      ) => boolean);
+    | (<T extends Record<string, unknown>>(record: T, req: Request) => boolean);
   enum?: string[];
   readOnly?: boolean;
-  /** true, false */
   immutable?: boolean;
-  /** true, false */
   nullable?: boolean;
-  /** (value: any, record: Object, req: Request) => boolean */
   validator?: (value: any, record: Object, req: Request) => boolean;
-  /** (value: any, record: Object, req: Request) => any **/
-  writeModifier?: (value: any, record: Object, req: Request) => any;
+  writeModifier?: <T, U>(value: T[keyof T], record: T, req: Request) => U;
 };
 
 export type Schema = Record<string, SchemaField>;
@@ -130,7 +122,20 @@ export type Schema = Record<string, SchemaField>;
 export type RouteHandler = (
   req: Request,
   res: Response
-) => [number, any, any?] | Promise<[number, any, any?]> | void;
+) =>
+  | [
+      statusCode: number,
+      response: Record<string, any>,
+      headers?: Record<string, any>
+    ]
+  | Promise<
+      [
+        statusCode: number,
+        response: Record<string, any>,
+        headers?: Record<string, any>
+      ]
+    >
+  | void;
 
 // Event Handlers
 export type EventHandler = (
@@ -153,7 +158,7 @@ export type Message<T = Record<string, unknown>> = {
   /** context of a db change event message (db changes are proxied over Google PubSub ) */
   changeContext?: PubSub;
   /** type of db change the occurred, ['create', 'update', 'delete'] **/
-  type: 'create' | 'update' | 'delete';
+  type: "create" | "update" | "delete";
 };
 
 // Context
