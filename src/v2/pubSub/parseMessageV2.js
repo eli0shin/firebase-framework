@@ -1,5 +1,5 @@
 const parseMessageV2 = callback => (event) => {
-  const { data } = event.json;
+  const { data } = event;
   const {message} = data;
 
   const newMessage = message.data
