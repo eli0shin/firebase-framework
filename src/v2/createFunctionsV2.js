@@ -17,14 +17,14 @@ const flattenObjects = [(acc, el) => ({ ...acc, ...el }), {}];
 const setupRoutesV2 = (config, service) =>
   Array.isArray(service.routes)
     ? {
-        [service.basePath]: onRequest(
-          {
-            region: config.region,
-            ...(config.runtimeOptions || service.runtimeOptions),
-          },
-          parseRoutes(config, service)
-        ),
-      }
+      [service.basePath]: onRequest(
+        {
+          region: config.region,
+          ...(config.runtimeOptions || service.runtimeOptions),
+        },
+        parseRoutes(config, service)
+      ),
+    }
     : {};
 
 const setupOnCreateV2 = (config, service) =>
@@ -57,85 +57,84 @@ const setupOnDeleteV2 = (config, service) =>
 const setupDBTriggersV2 = (config, service) =>
   service.publishChanges
     ? {
-        [`${service.basePath}_onCreate`]: setupOnCreateV2(config, service),
-        [`${service.basePath}_onUpdate`]: setupOnUpdateV2(config, service),
-        [`${service.basePath}_onDelete`]: setupOnDeleteV2(config, service),
-      }
+      [`${service.basePath}_onCreate`]: setupOnCreateV2(config, service),
+      [`${service.basePath}_onUpdate`]: setupOnUpdateV2(config, service),
+      [`${service.basePath}_onDelete`]: setupOnDeleteV2(config, service),
+    }
     : {};
 
 const setupKeepAliveV2 = (config, service) =>
   service.keepAlive
     ? {
-        [`${service.basePath}_keep_alive`]: onSchedule(
-          {region: config.region, schedule: "every 5 minutes"},
-          keepFunctionAlive(service)
-        ),
-      }
+      [`${service.basePath}_keep_alive`]: onSchedule(
+        { region: config.region, schedule: "every 5 minutes" },
+        keepFunctionAlive(service)
+      ),
+    }
     : {};
 
 const setupScheduleV2 =
   (config, service) =>
-  ({
-    time,
-    name,
-    function: toExecute,
-    timeZone = "America/New_York",
-    runtimeOptions,
-  }) =>
-    [
-      [`${service.basePath}_${name}`],
-      onSchedule(
-        {
-          schedule: time,
-          region: config.region,
-          timeZone,
-          ...(runtimeOptions || service.runtimeOptions),
-        },
-        toExecute
-      ),
-    ];
+    ({
+      time,
+      name,
+      function: toExecute,
+      timeZone = "America/New_York",
+      runtimeOptions,
+    }) =>
+      [
+        [`${service.basePath}_${name}`],
+        onSchedule(
+          {
+            schedule: time,
+            region: config.region,
+            timeZone,
+            ...(runtimeOptions || service.runtimeOptions),
+          },
+          toExecute
+        ),
+      ];
 
 const setupSchedulesV2 = (config, service) =>
   Array.isArray(service.schedule)
     ? service.schedule
-        .map(setupScheduleV2(config, service))
-        .reduce(...fromEntries)
+      .map(setupScheduleV2(config, service))
+      .reduce(...fromEntries)
     : {};
 
 const setupEventV2 =
   (config, service) =>
-  ({
-    topic,
-    type = "",
-    function: toExecute,
-    ensureIdempotent = false,
-    maxAge,
-    runtimeOptions,
-  }) => {
-    const functionName = `${service.basePath}_${topic}${
-      type ? `_${type}` : ""
-    }`;
+    ({
+      topic,
+      type = "",
+      function: toExecute,
+      ensureIdempotent = false,
+      maxAge,
+      runtimeOptions,
+    }) => {
+      const functionName = `${service.basePath}_${topic}${type ? `_${type}` : ""
+        }`;
 
-    const handlerWithIdempotency = ensureIdempotent
-      ? withIdempotencyV2(functionName, toExecute)
-      : toExecute;
+      const handlerWithIdempotency = ensureIdempotent
+        ? withIdempotencyV2(functionName, toExecute)
+        : toExecute;
 
-    const handler = maxAge
-      ? ignoreOldEventsV2(maxAge, handlerWithIdempotency)
-      : handlerWithIdempotency;
+      const handler = maxAge
+        ? ignoreOldEventsV2(maxAge, handlerWithIdempotency)
+        : handlerWithIdempotency;
 
-    return [
-      functionName,
-      onMessagePublished(
-        {
-          topic,
-          region: config.region,
-          ...(runtimeOptions || service.runtimeOptions),
-        },
-        parseMessageV2(handler)
-      ),
-    ];
-  };
+      return [
+        functionName,
+        onMessagePublished(
+          {
+            topic,
+            region: config.region,
+            ...(runtimeOptions || service.runtimeOptions),
+          },
+          parseMessageV2(handler)
+        ),
+      ];
+    };
 
 const setupEventsV2 = (config, service) =>
   Array.isArray(service.events)

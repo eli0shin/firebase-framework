@@ -12,7 +12,7 @@ const defaultConfig = {
   region: 'us-central1',
   validatePrivilege: defaultValidatePrivilege,
   validateVisibility: defaultValidateVisibility,
-  unwrapResponse: defaultUnwrapResponse, 
+  unwrapResponse: defaultUnwrapResponse,
   middleware: [],
   corsEnabled: true,
   corsOptions: defaultCorsOptions,
