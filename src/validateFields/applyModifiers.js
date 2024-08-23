@@ -18,10 +18,10 @@ const middleware = ({ schema, postSchema = null, withModifiers = false }) => (
 
 module.exports.middleware = middleware;
 
-function applyModifiers(schema, data) {
+function applyModifiers(schema, data, req) {
   Object.entries(data).forEach(([key, _value]) => {
     if (schema[key] && 'writeModifier' in schema[key]) {
-      data[key] = schema[key].writeModifier(data[key], data);
+      data[key] = schema[key].writeModifier(data[key], data, req);
     }
   });
 }
