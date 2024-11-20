@@ -1,44 +1,39 @@
-module.exports = schema => async (req, res, next) => {
-  try {
+const validateFields = (schema) => (req, res) => {
     Object.entries(req.body).forEach(([key, value]) => {
-      if (typeof schema[key] !== 'undefined' && !schema[key].readOnly) {
-        if (Array.isArray(schema[key].type)) {
-          if (!schema[key].type.includes(typeof value)) {
-            throw new TypeError(
-              `invalid value for ${key}, must be one of ${schema[key].type.join(
-                ', '
-              )}. found: ${typeof value}`
-            );
-          }
-        } else {
-          if (
-            typeof value !== schema[key].type &&
-            typeof schema[key].nullable !== 'undefined' &&
-            !schema[key].nullable &&
-            !(value === null)
-          ) {
-            throw new TypeError(
-              `invalid value for ${key}, must be of type ${
-                schema[key].type
-              }. found ${typeof value}`
-            );
-          }
-        }
+      // if the schema[key] is not writable delete it
+      if (!schema[key] || schema[key].readOnly) {
+        delete req.body[key]; 
+        return;
+      }
 
-        if (Array.isArray(schema[key].enum)) {
-          if (!schema[key].enum.includes(value)) {
-            throw new TypeError(`${value}: is not valid for key: ${key}`);
-          }
+      if (Array.isArray(schema[key].type)) {
+        if (!schema[key].type.includes(typeof value)) {
+          throw new TypeError(
+            `Invalid value for ${key}, must be one of ${schema[key].type.join(', ')}. Found: ${typeof value}`
+          );
         }
+      } else if (
+        typeof value !== schema[key].type &&
+        (!schema[key].nullable || value !== null)
+      ) {
+        throw new TypeError(`Invalid value for ${key}, must be of type ${schema[key].type}. Found: ${typeof value}`);
+      }
 
-        if (typeof schema[key].validator === 'function') {
-          if (!schema[key].validator(value, req.body, req)) {
-            throw new TypeError(`${value}: is not valid for key: ${key}`);
-          }
-        }
-      } else {
-        // if the field is not writable delete it
-        delete req.body[key];
+      if (
+        schema[key].type === 'object' && 
+        typeof schema[key].childSchema === 'object' &&
+        (!schema[key].nullable || value !== null)
+      ) {
+        const newReq = { ...req, body: { ...req.body[key] } };
+        validateFields(schema[key].childSchema)(newReq, res);
+      }
+
+      if (Array.isArray(schema[key].enum) && !schema[key].enum.includes(value)) {
+        throw new TypeError(`${value}: is not valid for key: ${key}`);
+      }
+
+      if (typeof schema[key].validator === 'function' && !schema[key].validator(value, req.body, req)) {
+        throw new TypeError(`${value}: is not valid for key: ${key}`);
       }
     });
 
@@ -59,14 +54,18 @@ module.exports = schema => async (req, res, next) => {
         }
       });
     }
+};
 
+module.exports = (schema) => async (req, res, next) => {
+  try {
+    validateFields(schema)(req, res);
     return next();
   } catch (error) {
     console.log(error);
 
     return res.status(400).send({
       status: 'error',
-      error: error.message
+      error: error.message,
     });
   }
 };
