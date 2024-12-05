@@ -106,6 +106,10 @@ function validate(schema, basePath, customName = null) {
           }
         },
       );
+
+      if (typeof config.type === 'object' && typeof config.childSchema !== 'undefined') {
+        validate(config.childSchema, basePath, customName);
+      }
     });
 
     return `${basePath}: ${customName ||

@@ -38,6 +38,10 @@ module.exports = {
     writeModifier: {
       required: false,
       type: "function"
+    },
+    childSchema: {
+      required: false,
+      type: "object"
     }
   }
 };
