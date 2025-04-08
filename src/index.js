@@ -7,6 +7,8 @@ const applyModifiers = require('./validateFields/applyModifiers')
 const iFC = require('./iFC.js');
 const publish = require('./pubSub/publish');
 
+module.exports = require('./v2');
+
 module.exports.default = createFunctions;
 module.exports.createFunctions = createFunctions;
 module.exports.generateTypes = generateTypes;
