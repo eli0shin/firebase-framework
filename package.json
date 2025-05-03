@@ -1,6 +1,6 @@
 {
   "name": "firebase-framework",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A framework designed to increase productivity in serverless applications using firebase",
   "main": "src/index.js",
   "scripts": {
