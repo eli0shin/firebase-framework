@@ -41,7 +41,7 @@ async function ifc(service, options = defaultOptions, req = {}) {
 
   const port = process.env.PORT || 5000;
 
-  const { headers: { host = `localhost:${port}`, ...reqHeaders } = {} } = req;
+  const { headers: { host = `localhost:${port}`,'content-length': contentLength, ...reqHeaders } = {} } = req;
 
   const projectId = isLocalhost
     ? firebaseConfig.projectId
